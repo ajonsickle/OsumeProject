@@ -1,0 +1,52 @@
+﻿<Window x:Class="OsumeProject.library"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OsumeProject"
+        mc:Ignorable="d"
+        Title="Library"
+        ResizeMode="CanMinimize"
+        WindowState="Maximized"
+        Height="1024" 
+        Width="1280"
+>
+    <Window.Background>
+        <LinearGradientBrush EndPoint="0,0" StartPoint="1,1">
+            <GradientStop Color="#FFD8831C"/>
+            <GradientStop Color="#FF2A7AB2" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Background>
+    <Window.Resources>
+        <Style x:Key="TopBarButtonDesign" TargetType="Button">
+            <Setter Property="BorderBrush" Value="#FF4F9BC7"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="75"/>
+            <RowDefinition Height="1005"/>
+        </Grid.RowDefinitions>
+        <Grid Background="#152238" Grid.ColumnSpan="3"/>
+        <Button Name="HomeButton" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="0" Height="50" Width="100" Foreground="Black" Background="White" Content="Home" Style="{StaticResource TopBarButtonDesign}" Click="homeButtonClick"/>
+        <Button Name="LibraryButton" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1" Height="50" Width="100" Foreground="Black" Background="White" Content="Library" Style="{StaticResource TopBarButtonDesign}"/>
+        <Button Name="SettingsButton" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="2" Height="50" Width="100" Foreground="Black" Background="White" Content="Settings" Style="{StaticResource TopBarButtonDesign}" Click="settingsButtonClick"/>
+        <Ellipse Height="60" Width="60" Grid.Row="0" Grid.Column="2" Margin="300, 0, 0, 0" Name="profilePicture" MouseUp="ellipse_MouseUp">
+            <Ellipse.Fill>
+                <SolidColorBrush Color="black"/>
+            </Ellipse.Fill>
+        </Ellipse>
+        <ScrollViewer Grid.ColumnSpan="3" Width="1500" Height="900" Margin="0, 0, 0, 0" Grid.Row="1" CanContentScroll="True" VerticalScrollBarVisibility="Hidden">
+            <Canvas Name="songsList" Width="Auto" Height="1000">
+                
+            </Canvas>
+        </ScrollViewer>
+    </Grid>
+</Window>

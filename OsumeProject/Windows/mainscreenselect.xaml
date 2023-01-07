@@ -1,0 +1,39 @@
+﻿<Window x:Class="OsumeProject.mainscreenselect"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OsumeProject"
+        mc:Ignorable="d"
+        Title="Main Menu" Height="500" Width="750"
+        ResizeMode="CanMinimize"
+        Background="#167e7e">
+    <Grid>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Vertical" Margin="0, 0, 300, 0">
+                <StackPanel.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Height" Value="100"/>
+                        <Setter Property="Width" Value="250"/>
+                        <Setter Property="FontSize" Value="50"/>
+                    </Style>
+                </StackPanel.Resources>
+            <Button Content="Login" Click="loginButtonClick" BorderBrush="Black" BorderThickness="5" Background="#1da5a5">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="15"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+                <Separator Opacity="0" Height="50"/>
+            <Button Content="Register" Click="registerButtonClick" BorderBrush="Black" BorderThickness="5" Background="#1da5a5">
+                <Button.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="15"/>
+                    </Style>
+                </Button.Resources>
+            </Button>
+            </StackPanel>
+        <Image Source="/Windows/newstrawb.png" Margin="550, -30, 0, 200" Width="200" Height="200" Grid.Row="1"/>
+        <Image Width="200" Height="200" Source="/Windows/logo.png" Margin="-300, -350, 0, 0"/>
+    </Grid>
+</Window>
