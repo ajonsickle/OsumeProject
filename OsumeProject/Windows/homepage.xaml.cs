@@ -37,7 +37,7 @@ namespace OsumeProject
         {
             InitializeComponent();
             loadWindow();
-            factory.getSingleton().apiClient.cosineSimilarityForRecommendation();
+            
         }
 
         private void ellipse_MouseUp(object sender, MouseButtonEventArgs e)
@@ -121,7 +121,6 @@ namespace OsumeProject
                 playMP3.Interrupt();
                 playMP3 = null;
                 OsumeTrack current = await factory.getSingleton().apiClient.getTrack(currentSongID);
-                await updateAudioFeatures(current);
                 await updateGenres(current, false);
                 await loadSong();
             }
@@ -132,68 +131,36 @@ namespace OsumeProject
                 throw err;
             }
         }
-        private async void loadWindow()
+        
+        private void toggleRecommendationStrength(object sender, RoutedEventArgs e)
         {
-            await factory.getSingleton().getRefreshToken();
-            try
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", databaseManager.connection);
+            checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable result = databaseManager.returnSearchedTable(checkRecSettings);
+            int strength = Convert.ToInt32(result.Rows[0][0]);
+            SQLiteCommand changeRecStrengthSettings = new SQLiteCommand("UPDATE userSettings SET recommendationStrength = @strength WHERE username = @username", databaseManager.connection);
+            changeRecStrengthSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            if (strength == 0)
             {
-                await loadSong();
+                changeRecStrengthSettings.Parameters.AddWithValue("@strength", 1);
+                ChangeRecButton.Content = "Normal Recommendations";
+                ChangeRecButton.Template = (ControlTemplate)this.Resources["purpleButton"];
+            } else
+            {
+                changeRecStrengthSettings.Parameters.AddWithValue("@strength", 0);
+                ChangeRecButton.Content = "Expanding Taste";
+                ChangeRecButton.Template = (ControlTemplate)this.Resources["pinkButton"];
             }
-            catch (Exception err)
-            {
-                Trace.WriteLine(err);
-            }
-        }
-        private async Task loadSong()
-        {
-            ImageBrush brush = new ImageBrush();
-            brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
-            profilePicture.Fill = brush;
-            bool validSong = false;
-            do
-            {
-                try
-                {
-                    OsumeTrack song = await factory.getSingleton().apiClient.getRandomTopTrack("short_term", 50);
-                    SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", databaseManager.connection);
-                    searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
-                    searchBlockList.Parameters.AddWithValue("@artistID", song.artists[0].id);
-                    DataTable table = databaseManager.returnSearchedTable(searchBlockList);
-                    if (table.Rows.Count == 0)
-                    {
-                        validSong = true;
-                        if (song.album.cover.images[300] != null)
-                        {
-                            albumCover.Source = new BitmapImage(new Uri(song.album.cover.images[300]));
-                        }
-                        else
-                        {
-                            albumCover.Source = null;
-                        }
-                        songTitle.Text = "🎵 " + song.name;
-                        artistName.Text = "🧑‍🎤" + song.artists[0].name;
-                        yearReleased.Text = "📅 " + song.album.release_date;
-                        OsumeArtist genreSearch = await factory.getSingleton().apiClient.getArtist(song.artists[0].id);
-                        genre.Text = "🏷 " + Regex.Replace(genreSearch.genres[0], @"(^\w)|(\s\w)", m => m.Value.ToUpper());
-                        albumTitle.Text = "💿 " + song.album.name;
-                        currentSongID = song.id;
-                        await setThread(song.previewURL);
-                        playMP3.Start();
-                    }
-                }
-                catch (Exception err)
-                {
-                    throw err;
-                }
-            } while (validSong == false);
-        }
+            changeRecStrengthSettings.ExecuteNonQuery();
+        } 
+
         public static void PlayMp3FromUrl(string url)
         {
             using (var client = new WebClient())
             {
-                client.DownloadFile(url, "song.mp3");
                 try
                 {
+                    client.DownloadFile(url, "song.mp3");
                     var reader = new Mp3FileReader("song.mp3");
                     var waveOut = new WaveOut();
                     waveOut.Init(reader);
@@ -225,5 +192,114 @@ namespace OsumeProject
             playMP3 = new Thread(() => PlayMp3FromUrl(playbackURL));
             playMP3.IsBackground = true;
         }
+        private async void loadWindow()
+        {
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", databaseManager.connection);
+            checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable result = databaseManager.returnSearchedTable(checkRecSettings);
+            int strength = Convert.ToInt32(result.Rows[0][0]);
+            if (strength == 0)
+            {
+                ChangeRecButton.Content = "Expanding Taste";
+                ChangeRecButton.Template = (ControlTemplate)this.Resources["pinkButton"];
+            }
+            await factory.getSingleton().getRefreshToken();
+            try
+            {
+                await loadSong();
+            }
+            catch (Exception err)
+            {
+                Trace.WriteLine(err);
+            }
+        }
+        private async Task loadSong()
+        {
+            ImageBrush brush = new ImageBrush();
+            brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
+            profilePicture.Fill = brush;
+            bool validSong = false;
+            int index = 24;
+            Dictionary<string, double> recommendations = factory.getSingleton().apiClient.generateRecommendations();
+            Random rand = new Random();
+            do
+            {
+                try
+                {
+                    OsumeTrack song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+                    bool allowed = false;
+                    if (song.isExplicit)
+                    {
+                        SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", databaseManager.connection);
+                        checkExplicitSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
+                        DataTable table0 = databaseManager.returnSearchedTable(checkExplicitSetting);
+                        if (Convert.ToInt32(table0.Rows[0][0]) == 0)
+                        {
+                            allowed = false;
+                        }
+                        else allowed = true;
+                    } else
+                    {
+                        allowed = true;
+                    }
+                    
+                    SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", databaseManager.connection);
+                    searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
+                    if (song.artists.Length > 0)
+                    {
+                        searchBlockList.Parameters.AddWithValue("@artistID", song.artists[0].id);
+                    } else
+                    {
+                        searchBlockList.Parameters.AddWithValue("@artistID", "null");
+                    }
+                    DataTable table1 = databaseManager.returnSearchedTable(searchBlockList);
+                    SQLiteCommand searchSavedSong = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username AND songID = @songID", databaseManager.connection);
+                    searchSavedSong.Parameters.AddWithValue("@username", factory.getSingleton().username);
+                    searchSavedSong.Parameters.AddWithValue("@songID", song.id);
+                    DataTable table2 = databaseManager.returnSearchedTable(searchSavedSong);
+                    if (table1.Rows.Count == 0 && table2.Rows.Count == 0 && allowed == true)
+                    {
+                        validSong = true;
+                        if (song.album.cover.images[300] != null)
+                        {
+                            albumCover.Source = new BitmapImage(new Uri(song.album.cover.images[300]));
+                        }
+                        else
+                        {
+                            albumCover.Source = null;
+                        }
+                        songTitle.Text = "🎵 " + song.name;
+                        if (song.artists.Length > 0) {
+                            artistName.Text = "🧑‍🎤" + song.artists[0].name;
+                            yearReleased.Text = "📅 " + song.album.release_date;
+                            OsumeArtist genreSearch = await factory.getSingleton().apiClient.getArtist(song.artists[0].id);
+                            if (genreSearch.genres.Length > 0)
+                            {
+                                genre.Text = "🏷 " + Regex.Replace(genreSearch.genres[0], @"(^\w)|(\s\w)", m => m.Value.ToUpper());
+                            }
+                            else
+                            {
+                                genre.Text = "🏷 " + "None";
+                            }
+                            albumTitle.Text = "💿 " + song.album.name;
+                            currentSongID = song.id;
+                            await setThread(song.previewURL);
+                            playMP3.Start();
+                        }
+                    } else
+                    {
+                        recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        index--;
+                    }
+                }
+                catch (Exception err)
+                {
+                    recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
+                    index--;
+                    throw err;
+                }
+            } while (validSong == false);
+        }
+        
     }
 }

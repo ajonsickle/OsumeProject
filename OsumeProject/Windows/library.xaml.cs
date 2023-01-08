@@ -82,9 +82,12 @@ namespace OsumeProject
                     string artistString = song.artists[0].name;
                     foreach (var artist in song.artists)
                     {
-                        if (!artistString.Contains(artist.name))
+                        if (artist != null)
                         {
-                            artistString += ", " + artist.name;
+                            if (!artistString.Contains(artist.name))
+                            {
+                                artistString += ", " + artist.name;
+                            }
                         }
                     }
                     text.Text = artistString + " - " + song.name;

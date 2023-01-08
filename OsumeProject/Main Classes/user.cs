@@ -18,7 +18,7 @@ namespace OsumeProject
         public string userID;
         public string playlistID;
         public bool admin = false;
-        public apiClient apiClient = new apiClient("af2ec11dcf36457e95de0ca70d46fd85", "bea950062ca34a87acaa11e8211ae513", new HttpClient());
+        public apiClient apiClient = new apiClient("5ee7e89013d64c0aad8d6c2fd98213b3", "8c3dff68705f421894419de174db4b10", new HttpClient());
 
         public user()
         {

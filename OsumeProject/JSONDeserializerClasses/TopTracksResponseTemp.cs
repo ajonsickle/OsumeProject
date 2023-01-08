@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -25,7 +26,8 @@ namespace OsumeProject
         public string[] available_markets { get; set; }
         public int disc_number { get; set; }
         public int duration_ms { get; set; }
-        public bool _explicit { get; set; }
+        [JsonProperty("explicit")]
+        public bool Explicit { get; set; }
         public External_IdsTopTracks external_ids { get; set; }
         public External_Urls2TopTracks external_urls { get; set; }
         public string href { get; set; }

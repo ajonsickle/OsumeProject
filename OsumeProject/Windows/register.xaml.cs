@@ -121,7 +121,7 @@ namespace OsumeProject
                         listener.Prefixes.Add("http://localhost:8888/callback/");
                         listener.Start();
                         string accessToken = "";
-                        var uri = "https://accounts.spotify.com/authorize?client_id=af2ec11dcf36457e95de0ca70d46fd85&response_type=code&scope=user-read-playback-state%20user-read-currently-playing%20user-read-recently-played%20user-top-read%20playlist-read-private%20playlist-modify-private%20playlist-modify-public%20user-library-read%20user-library-modify&show_dialog=true&redirect_uri=http://localhost:8888/callback";
+                        var uri = "https://accounts.spotify.com/authorize?client_id=5ee7e89013d64c0aad8d6c2fd98213b3&response_type=code&scope=user-read-playback-state%20user-read-currently-playing%20user-read-recently-played%20user-top-read%20playlist-read-private%20playlist-modify-private%20playlist-modify-public%20user-library-read%20user-library-modify&show_dialog=true&redirect_uri=http://localhost:8888/callback";
                         Process.Start(new ProcessStartInfo
                         {
                             FileName = uri,
@@ -187,9 +187,9 @@ namespace OsumeProject
                             insertFeaturesRow.Parameters.AddWithValue("livenessTotal", 0);
                             insertFeaturesRow.Parameters.AddWithValue("valenceTotal", 0);
                             insertFeaturesRow.ExecuteNonQuery();
-                            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (songLanguage, explicitTracks, username) VALUES (?, ?, ?)", databaseManager.connection);
-                            insertUserSettingsRow.Parameters.AddWithValue("songLanguage", "English");
+                            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (explicitTracks, recommendationStrength, username) VALUES (?, ?, ?)", databaseManager.connection);
                             insertUserSettingsRow.Parameters.AddWithValue("explicitTracks", true);
+                            insertUserSettingsRow.Parameters.AddWithValue("recommendationStrength", 1);
                             insertUserSettingsRow.Parameters.AddWithValue("username", usernameInput.Text);
                             insertUserSettingsRow.ExecuteNonQuery();
                             await factory.getSingleton().apiClient.analyseListeningHistory();

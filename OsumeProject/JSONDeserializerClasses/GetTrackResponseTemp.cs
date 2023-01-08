@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -11,7 +12,8 @@ namespace OsumeProject
         public Artist1GetTrack[] artists { get; set; }
         public int disc_number { get; set; }
         public int duration_ms { get; set; }
-        public bool _explicit { get; set; }
+        [JsonProperty("explicit")]
+        public bool Explicit { get; set; }
         public External_IdsGetTrack external_ids { get; set; }
         public External_Urls2GetTrack external_urls { get; set; }
         public string href { get; set; }

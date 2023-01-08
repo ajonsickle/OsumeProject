@@ -40,21 +40,37 @@ namespace OsumeProject
                 this.Close();
             }
         }
+        private void explicitTracksToggleClicked(object sender, RoutedEventArgs e)
+        {
+            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", databaseManager.connection);
+            checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable result = databaseManager.returnSearchedTable(checkExplicit);
+            SQLiteCommand changeSetting = new SQLiteCommand("UPDATE userSettings SET explicitTracks = @toggle WHERE username = @username", databaseManager.connection);
+            changeSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            if (Convert.ToInt32(result.Rows[0][0]) == 1)
+            {
+                changeSetting.Parameters.AddWithValue("@toggle", 0);
+                explicitTracksToggle.Content = "Explicit Tracks Off";
+            } else
+            {
+                changeSetting.Parameters.AddWithValue("@toggle", 1);
+                explicitTracksToggle.Content = "Explicit Tracks On";
+            }
+            changeSetting.ExecuteNonQuery();
+        }
         private async void loadSettings()
         {
             if (factory.getSingleton().admin == true) viewUsersAdmin.Visibility = Visibility.Visible;
             else viewUsersAdmin.Visibility = Visibility.Hidden;
+            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", databaseManager.connection);
+            checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable result = databaseManager.returnSearchedTable(checkExplicit);
+            if (Convert.ToInt32(result.Rows[0][0]) == 0) {
+                explicitTracksToggle.Content = "Explicit Tracks Off";
+            }
             ImageBrush brush = new ImageBrush();
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
-            SQLiteCommand getLanguage = new SQLiteCommand("SELECT songLanguage FROM userSettings WHERE username = @username", databaseManager.connection);
-            getLanguage.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable table = databaseManager.returnSearchedTable(getLanguage);
-            TextBlock header = new TextBlock();
-            header.Text = Convert.ToString(table.Rows[0][0]);
-            header.HorizontalAlignment = HorizontalAlignment.Center;
-            header.TextAlignment = TextAlignment.Center;
-            languageSelect.Header = header;
             blockedArtists.Children.Clear();
             SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", databaseManager.connection);
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
@@ -170,19 +186,6 @@ namespace OsumeProject
             mainscreenselect win = new mainscreenselect();
             win.Show();
             this.Close();
-        }
-        private void languageOptionClick(object sender, RoutedEventArgs e)
-        {
-            MenuItem item = (MenuItem)sender;
-            TextBlock header = new TextBlock();
-            header.Text = item.Name;
-            header.HorizontalAlignment = HorizontalAlignment.Center;
-            header.TextAlignment = TextAlignment.Center;
-            languageSelect.Header = header;
-            SQLiteCommand changeLanguage = new SQLiteCommand("UPDATE userSettings SET songLanguage = @songLanguage WHERE username = @username", databaseManager.connection);
-            changeLanguage.Parameters.AddWithValue("@songLanguage", item.Name);
-            changeLanguage.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            changeLanguage.ExecuteNonQuery();
         }
     }
 }
