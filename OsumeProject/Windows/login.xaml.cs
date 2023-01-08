@@ -100,7 +100,7 @@ namespace OsumeProject
             } catch (Exception err)
             {
                 Trace.WriteLine(err);
-                System.Windows.Application.Current.Shutdown();
+                
             }
             homepage homepageWindow = new homepage();
             homepageWindow.Show();

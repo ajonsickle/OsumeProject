@@ -524,11 +524,10 @@ namespace OsumeProject
                 else
                 {
                     string x = await sendRequest.Content.ReadAsStringAsync();
-                    Trace.WriteLine(x);
                     if (Convert.ToString(sendRequest.StatusCode) == "TooManyRequests")
                     {
                         success = false;
-                        Thread.Sleep(5000);
+                        Thread.Sleep(Convert.ToInt32(sendRequest.Headers.RetryAfter) * 1000);
                     }
                     else return null;
                 }
