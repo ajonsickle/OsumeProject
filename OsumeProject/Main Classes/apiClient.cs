@@ -358,7 +358,6 @@ namespace OsumeProject
         public async Task<OsumeArtist[]> getTopArtists(string range, int limit)
         {
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/me/top/artists?time_range=" + range + "&limit=" + limit);
-            
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<TopArtistsResponseTemp>(stream);
             List<OsumeArtist> artistList = new List<OsumeArtist>();
             foreach (var item in result.items)
@@ -524,12 +523,8 @@ namespace OsumeProject
                 else
                 {
                     string x = await sendRequest.Content.ReadAsStringAsync();
-                    if (Convert.ToString(sendRequest.StatusCode) == "TooManyRequests")
-                    {
-                        success = false;
-                        Thread.Sleep(Convert.ToInt32(sendRequest.Headers.RetryAfter) * 1000);
-                    }
-                    else return null;
+                    Trace.WriteLine(x);
+                    Thread.Sleep(5000);
                 }
             } while (success == false);
             return null;
