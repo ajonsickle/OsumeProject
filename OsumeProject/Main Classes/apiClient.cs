@@ -198,7 +198,9 @@ namespace OsumeProject
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/artists/" + id);
             if (stream == null) return null;
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<GetArtistResponseTemp>(stream);
-            return new OsumeArtist(result.external_urls.spotify, result.id, result.name, result.genres, result.images[0].url);
+            string image = null;
+            if (result.images.Length > 0) image = result.images[0].url;
+            return new OsumeArtist(result.external_urls.spotify, result.id, result.name, result.genres, image);
         }
 
         public async Task<OsumeTrack> getTrack(string id)
@@ -262,7 +264,8 @@ namespace OsumeProject
         {
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/me");
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<GetProfileResponseTemp>(stream);
-            return result.images[0].url;
+            if (result.images.Length > 0) return result.images[0].url;
+            else return "https://i.scdn.co/image/ab6761610000e5eb18bd995e53ed8e1e78cdce67";
         }
 
         public async Task<OsumeTrack> getRandomTopTrack(string range, int limit)
@@ -362,7 +365,9 @@ namespace OsumeProject
             List<OsumeArtist> artistList = new List<OsumeArtist>();
             foreach (var item in result.items)
             {
-                artistList.Add(new OsumeArtist(item.uri, item.id, item.name, item.genres, item.images[0].url));
+                string image = null;
+                if (item.images.Length > 0) image = item.images[0].url;
+                artistList.Add(new OsumeArtist(item.uri, item.id, item.name, item.genres, image));
             }
             return artistList.ToArray();
         }

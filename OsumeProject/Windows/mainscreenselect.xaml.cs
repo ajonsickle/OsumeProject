@@ -49,7 +49,7 @@ namespace OsumeProject
                 SQLiteCommand deleteEntity6 = new SQLiteCommand("DROP TABLE blockList", databaseManager.connection);
                 deleteEntity6.ExecuteNonQuery();
                 SQLiteCommand createEntity6 = new SQLiteCommand("CREATE TABLE blockList (artistID TEXT NOT NULL PRIMARY KEY, timeSaved DATETIME, username TEXT NOT NULL REFERENCES userAccount (username), FOREIGN KEY (username) REFERENCES userAccount (username))", databaseManager.connection);
-                createEntity6.ExecuteNonQuery();  */
+                createEntity6.ExecuteNonQuery(); */
             }
             
         }
