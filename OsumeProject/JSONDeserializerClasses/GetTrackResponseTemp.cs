@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace OsumeProject
 {
@@ -12,7 +13,7 @@ namespace OsumeProject
         public Artist1GetTrack[] artists { get; set; }
         public int disc_number { get; set; }
         public int duration_ms { get; set; }
-        [JsonProperty("explicit")]
+        [JsonPropertyName("explicit")]
         public bool Explicit { get; set; }
         public External_IdsGetTrack external_ids { get; set; }
         public External_Urls2GetTrack external_urls { get; set; }

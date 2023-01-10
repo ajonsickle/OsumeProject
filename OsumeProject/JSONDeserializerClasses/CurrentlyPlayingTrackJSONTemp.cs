@@ -1,7 +1,10 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace OsumeProject
 {
@@ -36,7 +39,7 @@ namespace OsumeProject
         public Artist1[] artists { get; set; }
         public int disc_number { get; set; }
         public int duration_ms { get; set; }
-        [JsonProperty("explicit")]
+        [JsonPropertyName("@explicit")]
         public bool Explicit { get; set; }
         public External_Ids external_ids { get; set; }
         public External_Urls3 external_urls { get; set; }

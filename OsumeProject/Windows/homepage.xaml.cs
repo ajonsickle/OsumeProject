@@ -227,7 +227,10 @@ namespace OsumeProject
                 try
                 {
                     OsumeTrack song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+
+                    
                     bool allowed = false;
+
                     if (song.isExplicit)
                     {
                         SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", databaseManager.connection);
@@ -242,13 +245,13 @@ namespace OsumeProject
                     {
                         allowed = true;
                     }
-                    
                     SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", databaseManager.connection);
                     searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
                     if (song.artists.Length > 0)
                     {
                         searchBlockList.Parameters.AddWithValue("@artistID", song.artists[0].id);
-                    } else
+                    }
+                    else
                     {
                         searchBlockList.Parameters.AddWithValue("@artistID", "null");
                     }

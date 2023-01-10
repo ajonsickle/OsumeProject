@@ -217,7 +217,6 @@ namespace OsumeProject
             {
                 artists.Add(await getArtist(artist.id));
             }
-            Trace.WriteLine(result.Explicit);
             Dictionary<string, double> audioFeatures = await getAudioFeatures(result.id);
             return new OsumeTrack(artists.ToArray(), result.external_urls.spotify, result.id, result.preview_url, result.name, result.Explicit, audioFeatures, new OsumeAlbum(albumArtists.ToArray(), result.album.external_urls.spotify, result.album.id, result.album.name, result.album.release_date, new OsumeAlbum.OsumeAlbumArt(new Dictionary<int, string>() { { result.album.images[0].width, result.album.images[0].url }, { result.album.images[1].width, result.album.images[1].url }, { result.album.images[2].width, result.album.images[2].url } })));
         }
@@ -529,7 +528,7 @@ namespace OsumeProject
                 {
                     string x = await sendRequest.Content.ReadAsStringAsync();
                     Trace.WriteLine(x);
-                    Thread.Sleep(5000);
+                    await Task.Delay(5000);
                 }
             } while (success == false);
             return null;

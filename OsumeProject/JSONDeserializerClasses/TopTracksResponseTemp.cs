@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace OsumeProject
 {
@@ -26,7 +27,7 @@ namespace OsumeProject
         public string[] available_markets { get; set; }
         public int disc_number { get; set; }
         public int duration_ms { get; set; }
-        [JsonProperty("explicit")]
+        [JsonPropertyName("explicit")]
         public bool Explicit { get; set; }
         public External_IdsTopTracks external_ids { get; set; }
         public External_Urls2TopTracks external_urls { get; set; }

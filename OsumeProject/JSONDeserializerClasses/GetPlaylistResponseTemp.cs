@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace OsumeProject
 {
@@ -94,7 +95,7 @@ namespace OsumeProject
         public int disc_number { get; set; }
         public int duration_ms { get; set; }
         public bool episode { get; set; }
-        [JsonProperty("explicit")]
+        [JsonPropertyName("explicit")]
         public bool Explicit { get; set; }
         public External_IdsGetPlaylist external_ids { get; set; }
         public External_Urls5GetPlaylist external_urls { get; set; }
