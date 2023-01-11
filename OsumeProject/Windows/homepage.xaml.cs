@@ -32,7 +32,8 @@ namespace OsumeProject
     {
         DateTime timeStamp;
         private Thread playMP3;
-        public string currentSongID;
+        public OsumeTrack currentSong;
+        OStack<OsumeTrack> songsPlayed = new OStack<OsumeTrack>();
         public homepage()
         {
             InitializeComponent();
@@ -65,41 +66,60 @@ namespace OsumeProject
             playMP3 = null;
             this.Close();
         }
+
+        private async void undo(object sender, RoutedEventArgs e)
+        {
+            if (songsPlayed.getLength() > 0)
+            {
+                OsumeTrack song = songsPlayed.pop();
+                if (playMP3 != null)
+                {
+                    playMP3.Interrupt();
+                    playMP3 = null;
+                    await loadSong(song);
+                }
+            }
+        }
+
         private async void likeButtonClick(object sender, RoutedEventArgs e)
         {
             if ((DateTime.Now - timeStamp).Ticks < 10000000) return;
             timeStamp = DateTime.Now;
             try
             {
-                playMP3.Interrupt();
-                playMP3 = null;
-                SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", databaseManager.connection);
-                command.Parameters.AddWithValue("songID", currentSongID);
-                command.Parameters.AddWithValue("timeSaved", DateTime.Now);
-                command.Parameters.AddWithValue("username", factory.getSingleton().username);
-                command.ExecuteNonQuery();
-                factory.getSingleton().apiClient.addToPlaylist(factory.getSingleton().playlistID, currentSongID);
-                OsumeTrack current = await factory.getSingleton().apiClient.getTrack(currentSongID);
-                await updateAudioFeatures(current);
-                await updateGenres(current, true);
-                await loadSong();
+                if (playMP3 != null)
+                {
+                    playMP3.Interrupt();
+                    playMP3 = null;
+                    SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", databaseManager.connection);
+                    command.Parameters.AddWithValue("songID", currentSong.id);
+                    command.Parameters.AddWithValue("timeSaved", DateTime.Now);
+                    command.Parameters.AddWithValue("username", factory.getSingleton().username);
+                    command.ExecuteNonQuery();
+                    factory.getSingleton().apiClient.addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
+                    await updateAudioFeatures(currentSong);
+                    await updateGenres(currentSong, true);
+                    songsPlayed.push(currentSong);
+                    await loadSong();
+                }
             }
             catch (Exception err)
             {
                 Trace.WriteLine(err);
+                songsPlayed.push(currentSong);
                 await loadSong();
             }
         }
         private async Task updateGenres(OsumeTrack track, bool like)
         {
-            List<string> addedGenres = new List<string>();
+            OList<string> addedGenres = new OList<string>();
             foreach (OsumeArtist artist in track.artists)
             {
                 foreach (string genre in artist.genres)
                 {
-                    if (!addedGenres.Contains(genre))
+                    if (!addedGenres.contains(genre))
                     {
-                        addedGenres.Add(genre);
+                        addedGenres.add(genre);
                         await factory.getSingleton().apiClient.updateGenres(genre, like);
                     }
                 }
@@ -118,15 +138,19 @@ namespace OsumeProject
             timeStamp = DateTime.Now;
             try
             {
-                playMP3.Interrupt();
-                playMP3 = null;
-                OsumeTrack current = await factory.getSingleton().apiClient.getTrack(currentSongID);
-                await updateGenres(current, false);
-                await loadSong();
+                if (playMP3 != null)
+                {
+                    playMP3.Interrupt();
+                    playMP3 = null;
+                    await updateGenres(currentSong, false);
+                    songsPlayed.push(currentSong);
+                    await loadSong();
+                }
             }
             catch (NullReferenceException err)
             {
                 Trace.WriteLine(err);
+                songsPlayed.push(currentSong);
                 await loadSong();
                 throw err;
             }
@@ -213,22 +237,27 @@ namespace OsumeProject
                 Trace.WriteLine(err);
             }
         }
-        private async Task loadSong()
+        private async Task loadSong(OsumeTrack songToPlay = null)
         {
+            Dictionary<string, double> recommendations = null;
+            Random rand = new Random();
             ImageBrush brush = new ImageBrush();
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
             bool validSong = false;
             int index = 24;
-            Dictionary<string, double> recommendations = factory.getSingleton().apiClient.generateRecommendations();
-            Random rand = new Random();
+            if (songToPlay == null)
+            {
+                recommendations = factory.getSingleton().apiClient.generateRecommendations();
+            }
             do
             {
                 try
                 {
-                    OsumeTrack song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+                    OsumeTrack song = null;
+                    if (songToPlay == null) song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+                    else song = songToPlay;
 
-                    
                     bool allowed = false;
 
                     if (song.isExplicit)
@@ -285,7 +314,7 @@ namespace OsumeProject
                                 genre.Text = "🏷 " + "None";
                             }
                             albumTitle.Text = "💿 " + song.album.name;
-                            currentSongID = song.id;
+                            currentSong = song;
                             await setThread(song.previewURL);
                             playMP3.Start();
                         }
@@ -297,6 +326,7 @@ namespace OsumeProject
                 }
                 catch (Exception err)
                 {
+                    Trace.WriteLine(err);
                     recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
                     index--;
                     throw err;

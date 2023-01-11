@@ -64,15 +64,15 @@ namespace OsumeProject
                 parser.Close();
                 if (!recommendations.ContainsKey(separated[0]))
                 {
-                    List<double> audioFeatureVector = new List<double>();
-                    audioFeatureVector.Add(Math.Round(Convert.ToDouble(separated[8]), 1));
-                    audioFeatureVector.Add(Math.Round(Convert.ToDouble(separated[9]), 1));
-                    audioFeatureVector.Add(Math.Round(Convert.ToDouble(separated[13]), 1));
-                    audioFeatureVector.Add(Math.Round(Convert.ToDouble(separated[14]), 1));
-                    audioFeatureVector.Add(Math.Round(Convert.ToDouble(separated[15]), 1));
-                    audioFeatureVector.Add(Math.Round(Convert.ToDouble(separated[16]), 1));
-                    audioFeatureVector.Add(Math.Round(Convert.ToDouble(separated[17]), 1));
-                    double[] songAudioFeatureVector = audioFeatureVector.ToArray();
+                    OList<double> audioFeatureVector = new OList<double>();
+                    audioFeatureVector.add(Math.Round(Convert.ToDouble(separated[8]), 1));
+                    audioFeatureVector.add(Math.Round(Convert.ToDouble(separated[9]), 1));
+                    audioFeatureVector.add(Math.Round(Convert.ToDouble(separated[13]), 1));
+                    audioFeatureVector.add(Math.Round(Convert.ToDouble(separated[14]), 1));
+                    audioFeatureVector.add(Math.Round(Convert.ToDouble(separated[15]), 1));
+                    audioFeatureVector.add(Math.Round(Convert.ToDouble(separated[16]), 1));
+                    audioFeatureVector.add(Math.Round(Convert.ToDouble(separated[17]), 1));
+                    double[] songAudioFeatureVector = audioFeatureVector.convertToArray();
                     double[] songGenreVector = separated[21].Split(',', StringSplitOptions.RemoveEmptyEntries).Select(double.Parse).ToArray();
                     double[] finalSongVector = songAudioFeatureVector.Concat(songGenreVector).ToArray();
                     /*double audioFeatureAngle = calculateCosineSimilarity(audioFeatureTasteVector, songAudioFeatureVector);
@@ -98,20 +98,20 @@ namespace OsumeProject
 
         public double[] getAudioFeatureTasteVector()
         {
-            List<double> vector = new List<double>();
+            OList<double> vector = new OList<double>();
             SQLiteCommand getAudioFeaturesForUser = new SQLiteCommand("SELECT (danceabilityTotal / count), (energyTotal / count), (speechinessTotal / count), (acousticnessTotal / count), (instrumentalnessTotal / count), (livenessTotal / count), (valenceTotal / count) FROM audioFeature WHERE username = @username", databaseManager.connection);
             getAudioFeaturesForUser.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable result = databaseManager.returnSearchedTable(getAudioFeaturesForUser);
             for (int i = 0; i < 7; i++)
             {
-                vector.Add(Math.Round(Convert.ToDouble(result.Rows[0][i]), 1));
+                vector.add(Math.Round(Convert.ToDouble(result.Rows[0][i]), 1));
             }
-            return vector.ToArray();
+            return vector.convertToArray();
         }
 
         public double[] getGenreTasteVector()
         {
-            List<double> vector = new List<double>();
+            OList<double> vector = new OList<double>();
             StreamReader sr = new StreamReader("genresList.txt");
             SQLiteCommand getAllGenresForUser = new SQLiteCommand("SELECT genreName, (numOfLikedSongs / numOfDislikedSongs) FROM genre WHERE username = @username", databaseManager.connection);
             getAllGenresForUser.Parameters.AddWithValue("@username", factory.getSingleton().username);
@@ -130,9 +130,9 @@ namespace OsumeProject
                         affinity = Math.Round(affinity, 1);
                     }
                 }
-                vector.Add(affinity);
+                vector.add(affinity);
             }
-            return vector.ToArray();
+            return vector.convertToArray();
         }
 
         public double calculateCosineSimilarity(double[] A, double[] B)
@@ -168,19 +168,19 @@ namespace OsumeProject
         {
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/me/player/currently-playing");
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<CurrentlyPlayingTrackJSONTemp>(stream);
-            List<OsumeArtist> artists = new List<OsumeArtist>();
+            OList<OsumeArtist> artists = new OList<OsumeArtist>();
             foreach (var artist in result.item.artists)
             {
-                artists.Add(await getArtist(artist.id));
+                artists.add(await getArtist(artist.id));
             }
-            List<OsumeArtist> albumartists = new List<OsumeArtist>();
+            OList<OsumeArtist> albumartists = new OList<OsumeArtist>();
             foreach (var artist in result.item.album.artists)
             {
-                albumartists.Add(await getArtist(artist.id));
+                albumartists.add(await getArtist(artist.id));
             }
             Dictionary<string, double> audioFeatures = await getAudioFeatures(result.item.id);
             
-            OsumeTrack song = new OsumeTrack(artists.ToArray(), result.item.external_urls.spotify, result.item.id, result.item.preview_url, result.item.name, result.item.Explicit, audioFeatures, new OsumeAlbum(albumartists.ToArray(), result.item.album.external_urls.spotify, result.item.album.id, result.item.album.name, result.item.album.release_date, new OsumeAlbum.OsumeAlbumArt(new Dictionary<int, string>() { { result.item.album.images[0].width, result.item.album.images[0].url }, { result.item.album.images[1].width, result.item.album.images[1].url }, { result.item.album.images[2].width, result.item.album.images[2].url } })));
+            OsumeTrack song = new OsumeTrack(artists.convertToArray(), result.item.external_urls.spotify, result.item.id, result.item.preview_url, result.item.name, result.item.Explicit, audioFeatures, new OsumeAlbum(albumartists.convertToArray(), result.item.album.external_urls.spotify, result.item.album.id, result.item.album.name, result.item.album.release_date, new OsumeAlbum.OsumeAlbumArt(new Dictionary<int, string>() { { result.item.album.images[0].width, result.item.album.images[0].url }, { result.item.album.images[1].width, result.item.album.images[1].url }, { result.item.album.images[2].width, result.item.album.images[2].url } })));
             return song;
         }
 
@@ -207,18 +207,18 @@ namespace OsumeProject
         {
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/tracks/" + id + "?market=GB");
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<GetTrackResponseTemp>(stream);
-            List<OsumeArtist> artists = new List<OsumeArtist>();
+            OList<OsumeArtist> artists = new OList<OsumeArtist>();
             foreach (var artist in result.artists)
             {
-                artists.Add(await getArtist(artist.id));
+                artists.add(await getArtist(artist.id));
             }
-            List<OsumeArtist> albumArtists = new List<OsumeArtist>();
+            OList<OsumeArtist> albumArtists = new OList<OsumeArtist>();
             foreach (var artist in result.album.artists)
             {
-                artists.Add(await getArtist(artist.id));
+                artists.add(await getArtist(artist.id));
             }
             Dictionary<string, double> audioFeatures = await getAudioFeatures(result.id);
-            return new OsumeTrack(artists.ToArray(), result.external_urls.spotify, result.id, result.preview_url, result.name, result.Explicit, audioFeatures, new OsumeAlbum(albumArtists.ToArray(), result.album.external_urls.spotify, result.album.id, result.album.name, result.album.release_date, new OsumeAlbum.OsumeAlbumArt(new Dictionary<int, string>() { { result.album.images[0].width, result.album.images[0].url }, { result.album.images[1].width, result.album.images[1].url }, { result.album.images[2].width, result.album.images[2].url } })));
+            return new OsumeTrack(artists.convertToArray(), result.external_urls.spotify, result.id, result.preview_url, result.name, result.Explicit, audioFeatures, new OsumeAlbum(albumArtists.convertToArray(), result.album.external_urls.spotify, result.album.id, result.album.name, result.album.release_date, new OsumeAlbum.OsumeAlbumArt(new Dictionary<int, string>() { { result.album.images[0].width, result.album.images[0].url }, { result.album.images[1].width, result.album.images[1].url }, { result.album.images[2].width, result.album.images[2].url } })));
         }
 
         public async Task<string> createPlaylist(string userID)
@@ -243,12 +243,12 @@ namespace OsumeProject
 
         public async void removeFromPlaylist(string playlistID, string[] trackIDs)
         {
-            List<RemoveFromPlaylistBody.tracksBody> items = new List<RemoveFromPlaylistBody.tracksBody>();
+            OList<RemoveFromPlaylistBody.tracksBody> items = new OList<RemoveFromPlaylistBody.tracksBody>();
             foreach (var id in trackIDs)
             {
-                items.Add(new RemoveFromPlaylistBody.tracksBody("spotify:track:" + id));
+                items.add(new RemoveFromPlaylistBody.tracksBody("spotify:track:" + id));
             }
-            RemoveFromPlaylistBody messageBody = new RemoveFromPlaylistBody(items.ToArray());
+            RemoveFromPlaylistBody messageBody = new RemoveFromPlaylistBody(items.convertToArray());
             await genericHTTPRequest("delete", "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks", messageBody);
         }
 
@@ -278,17 +278,17 @@ namespace OsumeProject
                 Random rnd = new Random();
                 int num = rnd.Next(result.items.Length);
                 var item = result.items[num];
-                List<OsumeArtist> trackArtists = new List<OsumeArtist>();
+                OList<OsumeArtist> trackArtists = new OList<OsumeArtist>();
                 foreach (var artist in item.artists)
                 {
                     OsumeArtist x = await getArtist(artist.id);
-                    trackArtists.Add(x);
+                    trackArtists.add(x);
                 }
-                List<OsumeArtist> albumArtists = new List<OsumeArtist>();
+                OList<OsumeArtist> albumArtists = new OList<OsumeArtist>();
                 foreach (var artist in item.album.artists)
                 {
                     OsumeArtist x = await getArtist(artist.id);
-                    albumArtists.Add(x);
+                    albumArtists.add(x);
                 }
                 Dictionary<int, string> albumCovers = new Dictionary<int, string>();
                 foreach (var image in item.album.images)
@@ -296,7 +296,7 @@ namespace OsumeProject
                     albumCovers.Add(image.width, image.url);
                 }
                 Dictionary<string, double> audioFeatures = await getAudioFeatures(item.id);
-                if (albumCovers != null) return new OsumeTrack(trackArtists.ToArray(), item.external_urls.spotify, item.id, item.preview_url, item.name, item.Explicit, audioFeatures, new OsumeAlbum(albumArtists.ToArray(), item.album.external_urls.spotify, item.album.id, item.album.name, item.album.release_date, new OsumeAlbum.OsumeAlbumArt(albumCovers)));
+                if (albumCovers != null) return new OsumeTrack(trackArtists.convertToArray(), item.external_urls.spotify, item.id, item.preview_url, item.name, item.Explicit, audioFeatures, new OsumeAlbum(albumArtists.convertToArray(), item.album.external_urls.spotify, item.album.id, item.album.name, item.album.release_date, new OsumeAlbum.OsumeAlbumArt(albumCovers)));
                 else valid = false;
             } while (valid == false);
             return await getTrack("3D0UBEEE8f3PNruc1dJ6Rs");
@@ -307,20 +307,20 @@ namespace OsumeProject
         {
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/me/top/tracks?time_range=" + range + "&limit=" + limit);
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<TopTracksResponseTemp>(stream);
-            List<OsumeTrack> tracksList = new List<OsumeTrack>();
+            OList<OsumeTrack> tracksList = new OList<OsumeTrack>();
             foreach (var item in result.items)
             {
-                List<OsumeArtist> trackArtists = new List<OsumeArtist>();
+                OList<OsumeArtist> trackArtists = new OList<OsumeArtist>();
                 foreach (var artist in item.artists)
                 {
                     OsumeArtist x = await getArtist(artist.id);
-                    if (x != null) trackArtists.Add(x);
+                    if (x != null) trackArtists.add(x);
                 }
-                List<OsumeArtist> albumArtists = new List<OsumeArtist>();
+                OList<OsumeArtist> albumArtists = new OList<OsumeArtist>();
                 foreach (var artist in item.album.artists)
                 {
                     OsumeArtist x = await getArtist(artist.id);
-                    if (x != null) albumArtists.Add(x);
+                    if (x != null) albumArtists.add(x);
                 }
                 Dictionary<int, string> albumCovers = new Dictionary<int, string>();
                 foreach (var image in item.album.images)
@@ -328,9 +328,9 @@ namespace OsumeProject
                     albumCovers.Add(image.width, image.url);
                 }
                 Dictionary<string, double> audioFeatures = await getAudioFeatures(item.id);
-                if (albumCovers != null) tracksList.Add(new OsumeTrack(trackArtists.ToArray(), item.external_urls.spotify, item.id, item.preview_url, item.name, item.Explicit, audioFeatures, new OsumeAlbum(albumArtists.ToArray(), item.album.external_urls.spotify, item.album.id, item.album.name, item.album.release_date, new OsumeAlbum.OsumeAlbumArt(albumCovers))));
+                if (albumCovers != null) tracksList.add(new OsumeTrack(trackArtists.convertToArray(), item.external_urls.spotify, item.id, item.preview_url, item.name, item.Explicit, audioFeatures, new OsumeAlbum(albumArtists.convertToArray(), item.album.external_urls.spotify, item.album.id, item.album.name, item.album.release_date, new OsumeAlbum.OsumeAlbumArt(albumCovers))));
             }
-            return tracksList.ToArray();
+            return tracksList.convertToArray();
         }
 
         public async Task<Dictionary<string, double>> getAudioFeatures(string trackID)
@@ -361,14 +361,14 @@ namespace OsumeProject
         {
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/me/top/artists?time_range=" + range + "&limit=" + limit);
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<TopArtistsResponseTemp>(stream);
-            List<OsumeArtist> artistList = new List<OsumeArtist>();
+            OList<OsumeArtist> artistList = new OList<OsumeArtist>();
             foreach (var item in result.items)
             {
                 string image = null;
                 if (item.images.Length > 0) image = item.images[0].url;
-                artistList.Add(new OsumeArtist(item.uri, item.id, item.name, item.genres, image));
+                artistList.add(new OsumeArtist(item.uri, item.id, item.name, item.genres, image));
             }
-            return artistList.ToArray();
+            return artistList.convertToArray();
         }
 
         public float calculateNewAverage(int size, float oldAverage, float newValue)
