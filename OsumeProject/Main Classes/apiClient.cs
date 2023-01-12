@@ -376,7 +376,7 @@ namespace OsumeProject
             return oldAverage + ((newValue - oldAverage) / size);
         }
 
-        public async Task updateGenres(string genre, bool like)
+        public async Task updateGenres(string genre, bool like, bool undo)
         {
             try
             {
@@ -389,38 +389,77 @@ namespace OsumeProject
             }
             catch (Exception err)
             {
-                SQLiteCommand incrementGenreValues;
-                if (like)
+                if (undo)
                 {
-                    incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs + 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                    SQLiteCommand decrementGenreValues;
+                    if (like)
+                    {
+                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs - 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                    }
+                    else
+                    {
+                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs - 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                    }
+                    decrementGenreValues.Parameters.AddWithValue("@genreName", genre);
+                    decrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
+                    decrementGenreValues.ExecuteNonQuery();
                 }
                 else
                 {
-                    incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs + 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                    SQLiteCommand incrementGenreValues;
+                    if (like)
+                    {
+                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs + 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                    }
+                    else
+                    {
+                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs + 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                    }
+                    incrementGenreValues.Parameters.AddWithValue("@genreName", genre);
+                    incrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
+                    incrementGenreValues.ExecuteNonQuery();
                 }
-                incrementGenreValues.Parameters.AddWithValue("@genreName", genre);
-                incrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
-                incrementGenreValues.ExecuteNonQuery();
             }
         }
 
-        public async Task updateAudioFeatures(OsumeTrack track, DataTable data)
+        public async Task updateAudioFeatures(OsumeTrack track, DataTable data, bool undo)
         {
             Dictionary<string, double> audioFeatures = await getAudioFeatures(track.id);
             if (audioFeatures == null) return;
-            double totalDanceability = Convert.ToDouble(data.Rows[0][2]) + audioFeatures["danceability"];
-            double totalEnergy = Convert.ToDouble(data.Rows[0][3]) + audioFeatures["energy"];
-            double totalSpeechiness = Convert.ToDouble(data.Rows[0][4]) + audioFeatures["speechiness"];
-            double totalAcousticness = Convert.ToDouble(data.Rows[0][5]) + audioFeatures["acousticness"];
-            double totalInstrumentalness = Convert.ToDouble(data.Rows[0][6]) + audioFeatures["instrumentalness"];
-            double totalLiveness = Convert.ToDouble(data.Rows[0][7]) + audioFeatures["liveness"];
-            double totalValence = Convert.ToDouble(data.Rows[0][8]) + audioFeatures["valence"];
+            double totalDanceability = 0;
+            double totalEnergy = 0;
+            double totalSpeechiness = 0;
+            double totalAcousticness = 0;
+            double totalInstrumentalness = 0;
+            double totalLiveness = 0;
+            double totalValence = 0;
             int count = Convert.ToInt32(data.Rows[0][1]);
-            count++;
             SQLiteCommand updateFeatures = new SQLiteCommand("UPDATE audioFeature SET count = @count, danceabilityTotal = @danceabilityTotal, " +
-                "energyTotal = @energyTotal, speechinessTotal = @speechinessTotal, acousticnessTotal = @acousticnessTotal, " +
-                "instrumentalnessTotal = @instrumentalnessTotal, livenessTotal = @livenessTotal, valenceTotal = @valenceTotal " +
-                "WHERE username = @user", databaseManager.connection);
+    "energyTotal = @energyTotal, speechinessTotal = @speechinessTotal, acousticnessTotal = @acousticnessTotal, " +
+    "instrumentalnessTotal = @instrumentalnessTotal, livenessTotal = @livenessTotal, valenceTotal = @valenceTotal " +
+    "WHERE username = @user", databaseManager.connection);
+
+            if (undo)
+            {
+                totalDanceability = Convert.ToDouble(data.Rows[0][2]) - audioFeatures["danceability"];
+                totalEnergy = Convert.ToDouble(data.Rows[0][3]) - audioFeatures["energy"];
+                totalSpeechiness = Convert.ToDouble(data.Rows[0][4]) - audioFeatures["speechiness"];
+                totalAcousticness = Convert.ToDouble(data.Rows[0][5]) - audioFeatures["acousticness"];
+                totalInstrumentalness = Convert.ToDouble(data.Rows[0][6]) - audioFeatures["instrumentalness"];
+                totalLiveness = Convert.ToDouble(data.Rows[0][7]) - audioFeatures["liveness"];
+                totalValence = Convert.ToDouble(data.Rows[0][8]) - audioFeatures["valence"];
+                count--;
+            } else
+            {
+                totalDanceability = Convert.ToDouble(data.Rows[0][2]) + audioFeatures["danceability"];
+                totalEnergy = Convert.ToDouble(data.Rows[0][3]) + audioFeatures["energy"];
+                totalSpeechiness = Convert.ToDouble(data.Rows[0][4]) + audioFeatures["speechiness"];
+                totalAcousticness = Convert.ToDouble(data.Rows[0][5]) + audioFeatures["acousticness"];
+                totalInstrumentalness = Convert.ToDouble(data.Rows[0][6]) + audioFeatures["instrumentalness"];
+                totalLiveness = Convert.ToDouble(data.Rows[0][7]) + audioFeatures["liveness"];
+                totalValence = Convert.ToDouble(data.Rows[0][8]) + audioFeatures["valence"];
+                count++;
+            }
             updateFeatures.Parameters.AddWithValue("@count", count);
             updateFeatures.Parameters.AddWithValue("@danceabilityTotal", totalDanceability);
             updateFeatures.Parameters.AddWithValue("@energyTotal", totalEnergy);
@@ -431,6 +470,7 @@ namespace OsumeProject
             updateFeatures.Parameters.AddWithValue("@valenceTotal", totalValence);
             updateFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
             updateFeatures.ExecuteNonQuery();
+
         }
 
         public async Task analyseListeningHistory()
@@ -452,7 +492,7 @@ namespace OsumeProject
             {
                 foreach (string genre in artist.genres)
                 {
-                    await updateGenres(genre, true);
+                    await updateGenres(genre, true, false);
                 }
                 foreach (Window window in Application.Current.Windows)
                 {
@@ -467,7 +507,7 @@ namespace OsumeProject
                 DataTable data = databaseManager.returnSearchedTable(searchFeatures);
                 if (data.Rows.Count >= 0)
                 {
-                    await updateAudioFeatures(track, data);
+                    await updateAudioFeatures(track, data, false);
                 }
                 foreach (Window window in Application.Current.Windows)
                 {

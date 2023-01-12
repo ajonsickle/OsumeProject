@@ -34,13 +34,13 @@ namespace OsumeProject
         private Thread playMP3;
         public OsumeTrack currentSong;
         OStack<OsumeTrack> songsPlayed = new OStack<OsumeTrack>();
-        OStack<bool> previousSongLiked = new OStack<bool>();
-        
+        OStack<bool> previousSongsLiked = new OStack<bool>();
+        bool undone = false;
+
         public homepage()
         {
             InitializeComponent();
             loadWindow();
-            
         }
 
         private void ellipse_MouseUp(object sender, MouseButtonEventArgs e)
@@ -71,21 +71,17 @@ namespace OsumeProject
 
         private async void undo(object sender, RoutedEventArgs e)
         {
+            if ((DateTime.Now - timeStamp).Ticks < 10000000) return;
+            timeStamp = DateTime.Now;
             if (songsPlayed.getLength() > 0)
             {
                 OsumeTrack song = songsPlayed.pop();
-                bool liked = previousSongLiked.pop();
+                bool liked = previousSongsLiked.pop();
                 if (playMP3 != null)
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    if (liked)
-                    {
-                        
-                    } else
-                    {
-
-                    }
+                    await undoChanges(song, liked);
                     await loadSong(song);
                 }
             }
@@ -107,22 +103,20 @@ namespace OsumeProject
                     command.Parameters.AddWithValue("username", factory.getSingleton().username);
                     command.ExecuteNonQuery();
                     factory.getSingleton().apiClient.addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
-                    await updateAudioFeatures(currentSong);
-                    await updateGenres(currentSong, true);
+                    await updateAudioFeatures(currentSong, false);
+                    await updateGenres(currentSong, true, false);
                     songsPlayed.push(currentSong);
-                    previousSongLiked.push(true);
+                    previousSongsLiked.push(true);
                     await loadSong();
                 }
             }
             catch (Exception err)
             {
                 Trace.WriteLine(err);
-                songsPlayed.push(currentSong);
-                previousSongLiked.push(true);
                 await loadSong();
             }
         }
-        private async Task updateGenres(OsumeTrack track, bool like)
+        private async Task undoChanges(OsumeTrack track, bool liked)
         {
             OList<string> addedGenres = new OList<string>();
             foreach (OsumeArtist artist in track.artists)
@@ -132,17 +126,54 @@ namespace OsumeProject
                     if (!addedGenres.contains(genre))
                     {
                         addedGenres.add(genre);
-                        await factory.getSingleton().apiClient.updateGenres(genre, like);
+                    }
+                }
+            }
+            DataTable featureData = null;
+            if (liked)
+            {
+                SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+                getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
+                featureData = databaseManager.returnSearchedTable(getCurrentFeatures);
+            }
+            if (featureData == null)
+            {
+                // clicked dislike
+                await updateGenres(track, false, true);
+            } else
+            {
+                // clicked like
+                await updateGenres(track, true, true);
+                await updateAudioFeatures(track, true);
+                SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", databaseManager.connection);
+                deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
+                deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
+                deleteFromLibrary.ExecuteNonQuery();
+            }
+
+        }
+        private async Task updateGenres(OsumeTrack track, bool like, bool undo)
+        {
+            OList<string> addedGenres = new OList<string>();
+            foreach (OsumeArtist artist in track.artists)
+            {
+                foreach (string genre in artist.genres)
+                {
+                    if (!addedGenres.contains(genre))
+                    {
+                        addedGenres.add(genre);
+                        await factory.getSingleton().apiClient.updateGenres(genre, like, undo);
                     }
                 }
             }
         }
-        private async Task updateAudioFeatures(OsumeTrack track)
+
+        private async Task updateAudioFeatures(OsumeTrack track, bool undo)
         {
             SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
             getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
             DataTable data = databaseManager.returnSearchedTable(getCurrentFeatures);
-            await factory.getSingleton().apiClient.updateAudioFeatures(track, data);
+            await factory.getSingleton().apiClient.updateAudioFeatures(track, data, undo);
         }
         private async void dislikeButtonClick(object sender, RoutedEventArgs e)
         {
@@ -154,17 +185,15 @@ namespace OsumeProject
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    await updateGenres(currentSong, false);
+                    await updateGenres(currentSong, false, false);
                     songsPlayed.push(currentSong);
-                    previousSongLiked.push(false);
+                    previousSongsLiked.push(true);
                     await loadSong();
                 }
             }
             catch (NullReferenceException err)
             {
                 Trace.WriteLine(err);
-                songsPlayed.push(currentSong);
-                previousSongLiked.push(false);
                 await loadSong();
                 throw err;
             }
@@ -269,8 +298,17 @@ namespace OsumeProject
                 try
                 {
                     OsumeTrack song = null;
-                    if (songToPlay == null) song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
-                    else song = songToPlay;
+                    if (songToPlay == null)
+                    {
+                        Trace.WriteLine("Hi");
+                        song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        undone = false;
+                    }
+                    else
+                    {
+                        song = songToPlay;
+                        undone = true;
+                    }
 
                     bool allowed = false;
 
@@ -341,9 +379,11 @@ namespace OsumeProject
                 catch (Exception err)
                 {
                     Trace.WriteLine(err);
-                    recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
-                    index--;
-                    throw err;
+                    if (recommendations != null)
+                    {
+                        recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        index--;
+                    }
                 }
             } while (validSong == false);
         }
