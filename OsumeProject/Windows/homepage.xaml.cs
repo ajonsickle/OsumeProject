@@ -34,6 +34,8 @@ namespace OsumeProject
         private Thread playMP3;
         public OsumeTrack currentSong;
         OStack<OsumeTrack> songsPlayed = new OStack<OsumeTrack>();
+        OStack<bool> previousSongLiked = new OStack<bool>();
+        
         public homepage()
         {
             InitializeComponent();
@@ -72,10 +74,18 @@ namespace OsumeProject
             if (songsPlayed.getLength() > 0)
             {
                 OsumeTrack song = songsPlayed.pop();
+                bool liked = previousSongLiked.pop();
                 if (playMP3 != null)
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
+                    if (liked)
+                    {
+                        
+                    } else
+                    {
+
+                    }
                     await loadSong(song);
                 }
             }
@@ -100,6 +110,7 @@ namespace OsumeProject
                     await updateAudioFeatures(currentSong);
                     await updateGenres(currentSong, true);
                     songsPlayed.push(currentSong);
+                    previousSongLiked.push(true);
                     await loadSong();
                 }
             }
@@ -107,6 +118,7 @@ namespace OsumeProject
             {
                 Trace.WriteLine(err);
                 songsPlayed.push(currentSong);
+                previousSongLiked.push(true);
                 await loadSong();
             }
         }
@@ -144,6 +156,7 @@ namespace OsumeProject
                     playMP3 = null;
                     await updateGenres(currentSong, false);
                     songsPlayed.push(currentSong);
+                    previousSongLiked.push(false);
                     await loadSong();
                 }
             }
@@ -151,6 +164,7 @@ namespace OsumeProject
             {
                 Trace.WriteLine(err);
                 songsPlayed.push(currentSong);
+                previousSongLiked.push(false);
                 await loadSong();
                 throw err;
             }
@@ -176,7 +190,7 @@ namespace OsumeProject
                 ChangeRecButton.Template = (ControlTemplate)this.Resources["pinkButton"];
             }
             changeRecStrengthSettings.ExecuteNonQuery();
-        } 
+        }
 
         public static void PlayMp3FromUrl(string url)
         {
