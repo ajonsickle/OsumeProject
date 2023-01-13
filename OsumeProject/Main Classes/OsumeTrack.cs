@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OsumeProject
 {
-    public class OsumeTrack
+    public class OsumeTrack : IComparable
     {
         public OsumeArtist[] artists { get; set; }
         public string spotifyURL { get; set; }
@@ -25,6 +25,11 @@ namespace OsumeProject
             this.isExplicit = isExplicit;
             this.album = album;
             this.features = features;
+        }
+
+        public int CompareTo(object obj)
+        {
+            throw new NotImplementedException();
         }
     }
 }

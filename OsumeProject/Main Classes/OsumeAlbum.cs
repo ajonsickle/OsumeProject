@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OsumeProject
 {
-    public class OsumeAlbum 
+    public class OsumeAlbum : IComparable
     {
         public class OsumeAlbumArt
         {
@@ -33,6 +33,11 @@ namespace OsumeProject
             this.name = name;
             this.cover = cover;
             this.release_date = release_date;
+        }
+
+        public int CompareTo(object obj)
+        {
+            throw new NotImplementedException();
         }
     }
 }

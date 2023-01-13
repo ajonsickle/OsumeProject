@@ -20,18 +20,19 @@ namespace OsumeProject
             length = elements.Length;
         }
 
-        public T[] sort(T[] array)
+        public OList<T> sort(OList<T> list)
         {
-            T[] left = null;
-            T[] right = null;
-            if (array.Length <= 1) return array;
+            T[] array = list.convertToArray();
             int mid = array.Length / 2;
+            T[] left = new T[mid];
+            T[] right = new T[array.Length - mid];
+            if (array.Length <= 1) return new OList<T>(array);
             Array.Copy(array, left, mid);
             Array.Reverse(array);
             Array.Copy(array, right, array.Length - mid);
             Array.Reverse(array);
-            left = sort(left);
-            right = sort(right);
+            left = sort(new OList<T>(left)).convertToArray();
+            right = sort(new OList<T>(right)).convertToArray();
             T[] combined = new T[left.Length + right.Length];
             int indexL = 0;
             int indexR = 0;
@@ -64,7 +65,7 @@ namespace OsumeProject
                     indexF++;
                 }
             }
-            return combined;
+            return new OList<T>(combined);
 
         }
         public int getLength()
@@ -86,6 +87,7 @@ namespace OsumeProject
             Array.Copy(elements, temp, length);
             temp[length] = element;
             elements = temp;
+            length++;
         }
 
         public bool contains(T element)
