@@ -35,6 +35,7 @@ namespace OsumeProject
         public OsumeTrack currentSong;
         OStack<OsumeTrack> songsPlayed = new OStack<OsumeTrack>();
         OStack<bool> previousSongsLiked = new OStack<bool>();
+        
         bool undone = false;
 
         public homepage()
