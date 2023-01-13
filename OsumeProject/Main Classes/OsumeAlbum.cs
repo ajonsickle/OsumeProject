@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OsumeProject
 {
-    public class OsumeAlbum
+    public class OsumeAlbum 
     {
         public class OsumeAlbumArt
         {

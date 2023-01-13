@@ -17,12 +17,12 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Data.Sqlite;
+using System.Security.Cryptography;
 
 namespace OsumeProject
 {
     public class apiClient
     {
-
         private string clientID;
         private string clientSecret;
         public HttpClient client;

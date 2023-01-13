@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,6 +43,19 @@ namespace OsumeProject
             mss.Show();
             this.Close();
         }
+        public string sha1(string input)
+        {
+            string output = "";
+            byte[] inputBytes = Encoding.ASCII.GetBytes(input);
+            SHA1 hasher = SHA1.Create();
+            byte[] computedHash = hasher.ComputeHash(inputBytes);
+            foreach (var hashedByte in computedHash)
+            {
+                output += hashedByte.ToString("X2");
+            }
+            if (string.IsNullOrEmpty(output)) return "Error!";
+            else return output;
+        }
         private async void loginButtonClick(object sender, RoutedEventArgs e)
         {
             var username = usernameInput.Text;
@@ -68,7 +82,7 @@ namespace OsumeProject
                         }
                         else admin = true;
                     }
-                    string hashedPassword = Hasher.sha1(passwordInput.Password);
+                    string hashedPassword = sha1(passwordInput.Password);
                     DataTable data = databaseManager.returnSearchedTable(command);
                     bool validPassword = false;
                     if ((string)data.Rows[0][1] == hashedPassword)

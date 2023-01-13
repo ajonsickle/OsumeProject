@@ -34,6 +34,7 @@ namespace OsumeProject
         private Thread playMP3;
         public OsumeTrack currentSong;
         OStack<OsumeTrack> songsPlayed = new OStack<OsumeTrack>();
+        OStack<OsumeTrack> songsToPlay = new OStack<OsumeTrack>();
         OStack<bool> previousSongsLiked = new OStack<bool>();
         
         bool undone = false;
@@ -82,6 +83,7 @@ namespace OsumeProject
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
+                    songsToPlay.push(currentSong);
                     await undoChanges(song, liked);
                     await loadSong(song);
                 }
@@ -301,8 +303,13 @@ namespace OsumeProject
                     OsumeTrack song = null;
                     if (songToPlay == null)
                     {
-                        Trace.WriteLine("Hi");
-                        song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        if (songsToPlay.getLength() == 0)
+                        {
+                            song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        } else
+                        {
+                            song = songsToPlay.pop();
+                        }
                         undone = false;
                     }
                     else

@@ -50,6 +50,14 @@ namespace OsumeProject
                 deleteEntity6.ExecuteNonQuery();
                 SQLiteCommand createEntity6 = new SQLiteCommand("CREATE TABLE blockList (artistID TEXT NOT NULL PRIMARY KEY, timeSaved DATETIME, username TEXT NOT NULL REFERENCES userAccount (username), FOREIGN KEY (username) REFERENCES userAccount (username))", databaseManager.connection);
                 createEntity6.ExecuteNonQuery(); */
+                OList<int> x = new OList<int>();
+                x.add(2);
+                x.add(7);
+                x.add(1);
+                x.add(9);
+                int[] y = x.sort(x.convertToArray());
+                x = new OList<int>(y);
+                x.printAll();
             }
             
         }
