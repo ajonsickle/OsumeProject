@@ -58,16 +58,22 @@ namespace OsumeProject
         {
             library libraryWindow = new library();
             libraryWindow.Show();
-            playMP3.Interrupt();
-            playMP3 = null;
+            if (playMP3 != null)
+            {
+                playMP3.Interrupt();
+                playMP3 = null;
+            }
             this.Close();
         }
         private void settingsButtonClick(object sender, RoutedEventArgs e)
         {
             settings settingsWindow = new settings();
             settingsWindow.Show();
-            playMP3.Interrupt();
-            playMP3 = null;
+            if (playMP3 != null)
+            {
+                playMP3.Interrupt();
+                playMP3 = null;
+            }
             this.Close();
         }
 
@@ -152,6 +158,7 @@ namespace OsumeProject
                 deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
                 deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
                 deleteFromLibrary.ExecuteNonQuery();
+                factory.getSingleton().apiClient.removeFromPlaylist(factory.getSingleton().playlistID, new string[]{ track.id });
             }
 
         }
@@ -291,7 +298,7 @@ namespace OsumeProject
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
             bool validSong = false;
-            int index = 24;
+            int index = 14;
             if (songToPlay == null)
             {
                 recommendations = factory.getSingleton().apiClient.generateRecommendations();
