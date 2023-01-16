@@ -30,6 +30,7 @@ namespace OsumeProject
     /// </summary>
     public partial class homepage : Window
     {
+
         DateTime timeStamp;
         private Thread playMP3;
         public OsumeTrack currentSong;
