@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:OsumeProject"
         mc:Ignorable="d"
         Title="Settings" ResizeMode="CanMinimize"
-        WindowState="Maximized"
+        WindowState="Normal"
         Height="1024" 
         Width="1280"
 >

@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="Library"
         ResizeMode="CanMinimize"
-        WindowState="Maximized"
+        WindowState="Normal"
         Height="1024" 
         Width="1280"
 >
