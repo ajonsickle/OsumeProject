@@ -519,27 +519,7 @@ namespace OsumeProject
             }
 
         }
-        public int[] getAvgColor(Bitmap bmp)
-        {
-            int totalRed = 0;
-            int totalBlue = 0;
-            int totalGreen = 0;
-            for (int i = 0; i < bmp.Width - 1; i++)
-            {
-                for (int j = 0; j < bmp.Height - 1; j++)
-                {
-                    System.Drawing.Color colour = bmp.GetPixel(i, j);
-                    totalRed += colour.R;
-                    totalBlue += colour.B;
-                    totalGreen += colour.G;
-                }
-            }
-            int avgRed = (int)Math.Round((double)totalRed / (bmp.Height * bmp.Width));
-            int avgBlue = (int)Math.Round((double)totalBlue / (bmp.Height * bmp.Width));
-            int avgGreen = (int)Math.Round((double)totalGreen / (bmp.Height * bmp.Width));
-            int[] arr = { avgRed, avgBlue, avgGreen };
-            return arr;
-        }
+
         public async Task<Stream> genericHTTPRequest(string method, string uri, object bodyParameters = null)
         {
             bool success = false;
