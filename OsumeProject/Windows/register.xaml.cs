@@ -18,6 +18,7 @@ using System.IO;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
+using System.Linq;
 
 namespace OsumeProject
 {
@@ -47,6 +48,22 @@ namespace OsumeProject
             mainscreenselect mss = new mainscreenselect();
             mss.Show();
             this.Close();
+        }
+        public string hash(string input)
+        {
+            long h0 = 0x67452301;
+            long h1 = 0xEFCDAB89;
+            long h2 = 0x98BADCFE;
+            long h3 = 0x10325476;
+            long h4 = 0xC3D2E1F0;
+            string binaryString = string.Join(" ", Encoding.GetEncoding("UTF8").GetBytes(input).Select(byt => Convert.ToString(byt, 2).PadLeft(8, '0')));
+            binaryString += '1';
+            while (binaryString.Length % 512 != 448)
+            {
+                binaryString += '0';
+            }
+            IEnumerable<string> chunks = Enumerable.Range(0, binaryString.Length / 512).Select(i => binaryString.Substring(i * 512, 512));
+
         }
         public string sha1(string input)
         {
