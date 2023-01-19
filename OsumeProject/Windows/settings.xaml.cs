@@ -30,6 +30,7 @@ namespace OsumeProject
             loadSettings();
 
         }
+
         private async void viewUsersClicked(object sender, RoutedEventArgs e)
         {
             if (factory.getSingleton().admin != true) return;
@@ -89,7 +90,7 @@ namespace OsumeProject
                     await stream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
                     Bitmap image = new Bitmap(memoryStream);
-                    int[] rgbValues = factory.getSingleton().apiClient.getAvgColor(image);
+                    int[] rgbValues = (Application.Current.MainWindow as library).getAvgColor(image);
                     System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle()
                     {
                         Width = 450,
