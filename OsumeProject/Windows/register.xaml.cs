@@ -20,6 +20,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Linq;
 using System.Numerics;
+using System.Threading.Tasks;
 
 namespace OsumeProject
 {
@@ -63,6 +64,54 @@ namespace OsumeProject
             }
             if (string.IsNullOrEmpty(output)) return "Error!";
             else return output;
+        }
+
+
+        public async Task analyseListeningHistory()
+        {
+            foreach (Window window in Application.Current.Windows)
+            {
+                if (window.GetType() == typeof(register))
+                {
+                    (window as register).errorMessageBox.Visibility = Visibility.Hidden;
+                    (window as register).analyseProgressBar.Visibility = Visibility.Visible;
+                    (window as register).analyseText.Visibility = Visibility.Visible;
+                }
+            }
+            OsumeTrack[] recentTopTracks = await factory.getSingleton().apiClient.getTopTracks("short_term", 50);
+            OsumeArtist[] recentTopArtists = await factory.getSingleton().apiClient.getTopArtists("short_term", 50);
+            SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+            searchFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
+            foreach (OsumeArtist artist in recentTopArtists)
+            {
+                foreach (string genre in artist.genres)
+                {
+                    await databaseManager.updateGenres(genre, true, false);
+                }
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window.GetType() == typeof(register))
+                    {
+                        (window as register).analyseProgressBar.Value = (window as register).analyseProgressBar.Value + 1;
+                    }
+                }
+            }
+            foreach (OsumeTrack track in recentTopTracks)
+            {
+                DataTable data = databaseManager.returnSearchedTable(searchFeatures);
+                if (data.Rows.Count >= 0)
+                {
+                    await databaseManager.updateAudioFeatures(track, data, false);
+                }
+                foreach (Window window in Application.Current.Windows)
+                {
+                    if (window.GetType() == typeof(register))
+                    {
+                        (window as register).analyseProgressBar.Value = (window as register).analyseProgressBar.Value + 1;
+                    }
+                }
+            }
+
         }
 
         private async void registerButtonClick(object sender, RoutedEventArgs e)
@@ -209,7 +258,7 @@ namespace OsumeProject
                             insertUserSettingsRow.Parameters.AddWithValue("recommendationStrength", 1);
                             insertUserSettingsRow.Parameters.AddWithValue("username", usernameInput.Text);
                             insertUserSettingsRow.ExecuteNonQuery();
-                            await factory.getSingleton().apiClient.analyseListeningHistory();
+                            await analyseListeningHistory();
                         }
 
                     }
