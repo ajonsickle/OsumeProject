@@ -20,7 +20,7 @@ namespace OsumeProject
             length = elements.Length;
         }
 
-        public OList<T> sort(OList<T> list)
+        public OList<T> sort(OList<T> list, bool ascending)
         {
             T[] array = list.convertToArray();
             int mid = array.Length / 2;
@@ -31,8 +31,8 @@ namespace OsumeProject
             Array.Reverse(array);
             Array.Copy(array, right, array.Length - mid);
             Array.Reverse(array);
-            left = sort(new OList<T>(left)).convertToArray();
-            right = sort(new OList<T>(right)).convertToArray();
+            left = sort(new OList<T>(left), ascending).convertToArray();
+            right = sort(new OList<T>(right), ascending).convertToArray();
             T[] combined = new T[left.Length + right.Length];
             int indexL = 0;
             int indexR = 0;
@@ -41,7 +41,7 @@ namespace OsumeProject
             {
                 if (indexL < left.Length && indexR < right.Length)
                 {
-                    if (left[indexL].CompareTo(right[indexR]) <= 0)
+                    if ((ascending) ? left[indexL].CompareTo(right[indexR]) <= 0 : left[indexL].CompareTo(right[indexR]) >= 0)
                     {
                         combined[indexF] = left[indexL];
                         indexL++;

@@ -10,6 +10,7 @@
     <None Remove="Windows\60690.png" />
     <None Remove="Windows\logo.png" />
     <None Remove="Windows\newstrawb.png" />
+    <None Remove="Windows\sortButton.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +25,7 @@
     <Resource Include="Windows\60690.png" />
     <Resource Include="Windows\logo.png" />
     <Resource Include="Windows\newstrawb.png" />
+    <Resource Include="Windows\sortButton.png" />
   </ItemGroup>
 
 </Project>

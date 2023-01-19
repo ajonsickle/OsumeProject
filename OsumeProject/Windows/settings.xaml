@@ -44,9 +44,10 @@
                 <SolidColorBrush Color="black"/>
             </Ellipse.Fill>
         </Ellipse>
+        
         <StackPanel Grid.ColumnSpan="3" Margin="0, 50, 0, 0" Grid.Row="2">
             <Button Content="Log Out" Width="150" Height="100" FontSize="20" Background="Red" BorderBrush="Black" BorderThickness="5" Click="logout"/>
-
+            <Button Content="View Genres" Width="150" Height="100" FontSize="20" Background="White" BorderBrush="Black" BorderThickness="2" Click="viewGenres" Grid.Column="3" Margin="1000, -100, 0, 0"/>
             <TextBlock Margin="0, 100, 0, 0" Width="300" Height="50" Text="Block Artist" FontSize="35" TextAlignment="Center"></TextBlock>
             <StackPanel Orientation="Horizontal" Width="350" Height="50" Margin="0, 5, 0, 0" >
                 <TextBox Name="blockArtistText" TextAlignment="Center" FontSize="20" Width="300" Height="50"></TextBox>
@@ -60,5 +61,6 @@
             <ToggleButton Name="explicitTracksToggle" Width="150" Height="50" Content="Explicit Tracks On" Grid.Column="3" Grid.Row="2" BorderBrush="Black" BorderThickness="3" Click="explicitTracksToggleClicked"/>
         </StackPanel>
         
+
     </Grid>
 </Window>

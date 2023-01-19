@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Drawing;
+using OsumeProject.Windows;
 
 namespace OsumeProject
 {
@@ -40,6 +41,13 @@ namespace OsumeProject
                 userlistWindow.Show();
                 this.Close();
             }
+        }
+
+        private void viewGenres(object sender, RoutedEventArgs e)
+        {
+            genresView genresListWindow = new genresView();
+            genresListWindow.Show();
+            this.Close();
         }
         private void explicitTracksToggleClicked(object sender, RoutedEventArgs e)
         {
@@ -90,7 +98,8 @@ namespace OsumeProject
                     await stream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
                     Bitmap image = new Bitmap(memoryStream);
-                    int[] rgbValues = (Application.Current.MainWindow as library).getAvgColor(image);
+                    library wind = new library();
+                    int[] rgbValues = wind.getAvgColor(image);
                     System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle()
                     {
                         Width = 450,

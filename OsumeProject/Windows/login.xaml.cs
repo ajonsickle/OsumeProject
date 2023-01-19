@@ -47,79 +47,6 @@ namespace OsumeProject
             this.Close();
         }
 
-        public string hash(string input)
-        {
-            long h0 = 0x67452301;
-            long h1 = 0xEFCDAB89;
-            long h2 = 0x98BADCFE;
-            long h3 = 0x10325476;
-            long h4 = 0xC3D2E1F0;
-            string binaryString = string.Join(" ", Encoding.GetEncoding("ASCII").GetBytes(input).Select(byt => Convert.ToString(byt, 2).PadLeft(8, '0')));
-            binaryString += '1';
-            while (binaryString.Length % 512 != 448)
-            {
-                binaryString += '0';
-            }
-            byte[] bytes = Encoding.ASCII.GetBytes(input);
-            var endianInteger = BitConverter.ToUInt64(bytes);
-            string endianString = Convert.ToString(endianInteger);
-            binaryString += endianString;
-            IEnumerable<string> chunks = Enumerable.Range(0, binaryString.Length / 512).Select(i => binaryString.Substring(i * 512, 512));
-            foreach (var chunk in chunks)
-            {
-                IEnumerable<string> words = Enumerable.Range(0, chunk.Length / 32).Select(j => chunk.Substring(j * 32, 32));
-                string[] wordArray = words.ToArray();
-                byte[] byteArray = wordArray.Select(byte.Parse).ToArray();
-                for (int i = 16; i < 79; i++)
-                {
-                    byteArray[i] = (byte)BitOperations.RotateLeft((uint)(byteArray[i - 3] ^ byteArray[i - 8] ^ byteArray[i - 14] ^ byteArray[i - 16]), 1);
-                }
-                long a = h0;
-                long b = h1;
-                long c = h2;
-                long d = h3;
-                long e = h4;
-                long f = 0;
-                long k = 0;
-                for (int j = 0; j < 79; j++)
-                {
-                    if (j >= 0 && j <= 19)
-                    {
-                        f = (b & c) | ((~b) & d);
-                        k = 0x5A827999;
-                    }
-                    else if (j >= 20 && j <= 39)
-                    {
-                        f = b ^ c ^ d;
-                        k = 0x6ED9EBA1;
-                    }
-                    else if (j >= 40 && j <= 59)
-                    {
-                        f = (b & c) | (b & d) | (c & d);
-                        k = 0x8F1BBCDC;
-                    }
-                    else if (j >= 60 && j <= 70)
-                    {
-                        f = b ^ c ^ d;
-                        k = 0xCA62C1D6;
-                    }
-                    long temp = (BitOperations.RotateLeft((uint)a, 5)) + f + e + k + byteArray[j];
-                    e = d;
-                    d = c;
-                    c = BitOperations.RotateLeft((uint)b, 30);
-                    b = a;
-                    a = temp;
-                }
-                h0 = h0 + a;
-                h1 = h1 + b;
-                h2 = h2 + c;
-                h3 = h3 + d;
-                h4 = h4 + e;
-            }
-            string finalHash = Convert.ToString(h0) + Convert.ToString(h1) + Convert.ToString(h2) + Convert.ToString(h3) + Convert.ToString(h4);
-            return finalHash;
-        }
-
         public string sha1(string input)
         {
             string output = "";
@@ -159,7 +86,7 @@ namespace OsumeProject
                         }
                         else admin = true;
                     }
-                    string hashedPassword = hash(passwordInput.Password);
+                    string hashedPassword = sha1(passwordInput.Password);
                     DataTable data = databaseManager.returnSearchedTable(command);
                     bool validPassword = false;
                     if ((string)data.Rows[0][1] == hashedPassword)
