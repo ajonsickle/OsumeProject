@@ -75,7 +75,7 @@ namespace OsumeProject
                 try
                 {
                     OsumeTrack song = await factory.getSingleton().apiClient.getTrack(row[0].ToString());
-                    string imageURI = song.album.cover.images[64];
+                    string imageURI = song.album.coverImages[64];
                     var response = await factory.getSingleton().apiClient.client.GetAsync(imageURI);
                     var stream = await response.Content.ReadAsStreamAsync();
                     var memoryStream = new MemoryStream();
@@ -95,7 +95,7 @@ namespace OsumeProject
                         StrokeThickness = 5
                     };
                     System.Windows.Controls.Image img = new System.Windows.Controls.Image();
-                    img.Source = new BitmapImage(new Uri(song.album.cover.images[64]));
+                    img.Source = new BitmapImage(new Uri(song.album.coverImages[64]));
                     img.Width = 75;
                     img.Height = 75;
                     img.Margin = new Thickness(65, 12 + rectangleTopMargin, 0, 0);

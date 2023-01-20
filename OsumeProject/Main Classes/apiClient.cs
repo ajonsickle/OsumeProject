@@ -23,8 +23,8 @@ namespace OsumeProject
 {
     public class apiClient
     {
-        private string clientID;
-        private string clientSecret;
+        public string clientID;
+        public string clientSecret;
         public HttpClient client;
         public apiClient(string clientID, string clientSecret, HttpClient client)
         {
@@ -32,15 +32,6 @@ namespace OsumeProject
             this.clientSecret = clientSecret;
             this.client = client;
         }
-        public string getClientID()
-        {
-            return clientID;
-        }
-        public string getClientSecret()
-        {
-            return clientSecret;
-        }
-
         public async Task<OsumeArtist> getArtistByName(string artist)
         {
             string x = artist.Replace(" ", "%20");
@@ -75,7 +66,7 @@ namespace OsumeProject
                 artists.add(await getArtist(artist.id));
             }
             Dictionary<string, double> audioFeatures = await getAudioFeatures(result.id);
-            return new OsumeTrack(artists.convertToArray(), result.external_urls.spotify, result.id, result.preview_url, result.name, result.Explicit, audioFeatures, new OsumeAlbum(albumArtists.convertToArray(), result.album.external_urls.spotify, result.album.id, result.album.name, result.album.release_date, new OsumeAlbum.OsumeAlbumArt(new Dictionary<int, string>() { { result.album.images[0].width, result.album.images[0].url }, { result.album.images[1].width, result.album.images[1].url }, { result.album.images[2].width, result.album.images[2].url } })));
+            return new OsumeTrack(artists.convertToArray(), result.external_urls.spotify, result.id, result.preview_url, result.name, result.Explicit, audioFeatures, new OsumeAlbum(albumArtists.convertToArray(), result.album.external_urls.spotify, result.album.id, result.album.name, result.album.release_date, new Dictionary<int, string>() { { result.album.images[0].width, result.album.images[0].url }, { result.album.images[1].width, result.album.images[1].url }, { result.album.images[2].width, result.album.images[2].url } }));
         }
 
         public async Task<string> createPlaylist(string userID)
@@ -84,13 +75,6 @@ namespace OsumeProject
             var stream = await genericHTTPRequest("post", "https://api.spotify.com/v1/users/" + userID + "/playlists", messageBody);
             var result = await System.Text.Json.JsonSerializer.DeserializeAsync<CreatePlaylistResponseTemp>(stream);
             return result.id;
-        }
-
-        public async Task<GetPlaylistResponseTemp> getPlaylist(string playlistID)
-        {
-            var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/playlists/" + playlistID);
-            var result = await System.Text.Json.JsonSerializer.DeserializeAsync<GetPlaylistResponseTemp>(stream);
-            return result;
         }
 
         public async void addToPlaylist(string playlistID, string trackID)
@@ -149,7 +133,7 @@ namespace OsumeProject
                     albumCovers.Add(image.width, image.url);
                 }
                 Dictionary<string, double> audioFeatures = await getAudioFeatures(item.id);
-                if (albumCovers != null) tracksList.add(new OsumeTrack(trackArtists.convertToArray(), item.external_urls.spotify, item.id, item.preview_url, item.name, item.Explicit, audioFeatures, new OsumeAlbum(albumArtists.convertToArray(), item.album.external_urls.spotify, item.album.id, item.album.name, item.album.release_date, new OsumeAlbum.OsumeAlbumArt(albumCovers))));
+                if (albumCovers != null) tracksList.add(new OsumeTrack(trackArtists.convertToArray(), item.external_urls.spotify, item.id, item.preview_url, item.name, item.Explicit, audioFeatures, new OsumeAlbum(albumArtists.convertToArray(), item.album.external_urls.spotify, item.album.id, item.album.name, item.album.release_date, albumCovers)));
             }
             return tracksList.convertToArray();
         }

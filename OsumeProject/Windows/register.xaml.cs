@@ -215,7 +215,7 @@ namespace OsumeProject
                         });
                         if (admin == true) factory.createSingleton(true);
                         else factory.createSingleton(false);
-                        getAccessToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(factory.getSingleton().apiClient.getClientID() + ":" + factory.getSingleton().apiClient.getClientSecret())));
+                        getAccessToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(factory.getSingleton().apiClient.clientID + ":" + factory.getSingleton().apiClient.clientSecret)));
                         var token = await factory.getSingleton().apiClient.client.SendAsync(getAccessToken);
                         if (!token.IsSuccessStatusCode)
                         {

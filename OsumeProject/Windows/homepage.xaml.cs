@@ -486,9 +486,9 @@ namespace OsumeProject
                     if (table1.Rows.Count == 0 && table2.Rows.Count == 0 && allowed == true)
                     {
                         validSong = true;
-                        if (song.album.cover.images[300] != null)
+                        if (song.album.coverImages[300] != null)
                         {
-                            albumCover.Source = new BitmapImage(new Uri(song.album.cover.images[300]));
+                            albumCover.Source = new BitmapImage(new Uri(song.album.coverImages[300]));
                         }
                         else
                         {
