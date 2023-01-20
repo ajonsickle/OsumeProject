@@ -514,7 +514,10 @@ namespace OsumeProject
                         }
                     } else
                     {
-                        recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        if (recommendations != null)
+                        {
+                            recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        }
                         index--;
                     }
                 }
