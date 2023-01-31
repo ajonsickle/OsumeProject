@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,13 +21,16 @@ namespace OsumeProject
     /// </summary>
     public partial class mainscreenselect : Window
     {
-        public mainscreenselect()
+        public Osume Osume;
+        public mainscreenselect(ref Osume Osume)
         {
+            Osume = this.Osume;
+            if (Osume == null) Osume = new Osume(new apiClient("5ee7e89013d64c0aad8d6c2fd98213b3", "8c3dff68705f421894419de174db4b10", new HttpClient());, new databaseManager(new SQLiteConnection("Data Source=database.db")));
             InitializeComponent();
-            if (databaseManager.open == false)
+            if (Osume.databaseManager.open == false)
             {
-                databaseManager.connection.Open();
-                databaseManager.open = true;
+                Osume.databaseManager.connection.Open();
+                Osume.databaseManager.open = true;
                 /*
                 SQLiteCommand deleteEntity = new SQLiteCommand("DROP TABLE genre", databaseManager.connection);
                 deleteEntity.ExecuteNonQuery();
@@ -57,13 +61,13 @@ namespace OsumeProject
         }
         private void loginButtonClick(object sender, RoutedEventArgs e)
         {
-            login loginWindow = new login();
+            login loginWindow = new login(ref Osume);
             loginWindow.Show();
             this.Close();
         }
         private void registerButtonClick(object sender, RoutedEventArgs e)
         {
-            register registerWindow = new register();
+            register registerWindow = new register(ref Osume);
             registerWindow.Show();
             this.Close();
         }

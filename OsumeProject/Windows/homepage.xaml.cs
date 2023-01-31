@@ -31,7 +31,7 @@ namespace OsumeProject
     /// </summary>
     public partial class homepage : Window
     {
-
+        Osume Osume;
         DateTime timeStamp;
         private Thread playMP3;
         public OsumeTrack currentSong;
@@ -41,10 +41,11 @@ namespace OsumeProject
         
         bool undone = false;
 
-        public homepage()
+        public homepage(ref Osume Osume)
         {
             InitializeComponent();
             loadWindow();
+            this.Osume = Osume;
         }
 
         private void ellipse_MouseUp(object sender, MouseButtonEventArgs e)
@@ -58,7 +59,7 @@ namespace OsumeProject
         }
         private void libraryButtonClick(object sender, RoutedEventArgs e)
         {
-            library libraryWindow = new library();
+            library libraryWindow = new library(ref Osume);
             libraryWindow.Show();
             if (playMP3 != null)
             {
@@ -139,9 +140,9 @@ namespace OsumeProject
                     i++;
                 }
             }
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", databaseManager.connection);
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
             checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = databaseManager.returnSearchedTable(checkRecSettings);
+            DataTable result = Osume.databaseManager.returnSearchedTable(checkRecSettings);
             int strength = Convert.ToInt32(result.Rows[0][0]);
             Dictionary<string, double> sortedRecs = new Dictionary<string, double>();
             if (strength == 0)
@@ -158,9 +159,9 @@ namespace OsumeProject
         public double[] getAudioFeatureTasteVector()
         {
             OList<double> vector = new OList<double>();
-            SQLiteCommand getAudioFeaturesForUser = new SQLiteCommand("SELECT (danceabilityTotal / count), (energyTotal / count), (speechinessTotal / count), (acousticnessTotal / count), (instrumentalnessTotal / count), (livenessTotal / count), (valenceTotal / count) FROM audioFeature WHERE username = @username", databaseManager.connection);
+            SQLiteCommand getAudioFeaturesForUser = new SQLiteCommand("SELECT (danceabilityTotal / count), (energyTotal / count), (speechinessTotal / count), (acousticnessTotal / count), (instrumentalnessTotal / count), (livenessTotal / count), (valenceTotal / count) FROM audioFeature WHERE username = @username", Osume.databaseManager.connection);
             getAudioFeaturesForUser.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = databaseManager.returnSearchedTable(getAudioFeaturesForUser);
+            DataTable result = Osume.databaseManager.returnSearchedTable(getAudioFeaturesForUser);
             for (int i = 0; i < 7; i++)
             {
                 vector.add(Math.Round(Convert.ToDouble(result.Rows[0][i]), 1));
@@ -172,9 +173,9 @@ namespace OsumeProject
         {
             OList<double> vector = new OList<double>();
             StreamReader sr = new StreamReader("genresList.txt");
-            SQLiteCommand getAllGenresForUser = new SQLiteCommand("SELECT genreName, (numOfLikedSongs / numOfDislikedSongs) FROM genre WHERE username = @username", databaseManager.connection);
+            SQLiteCommand getAllGenresForUser = new SQLiteCommand("SELECT genreName, (numOfLikedSongs / numOfDislikedSongs) FROM genre WHERE username = @username", Osume.databaseManager.connection);
             getAllGenresForUser.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = databaseManager.returnSearchedTable(getAllGenresForUser);
+            DataTable result = Osume.databaseManager.returnSearchedTable(getAllGenresForUser);
             while (sr.Peek() != -1)
             {
                 string stapleGenre = Convert.ToString(sr.ReadLine());
@@ -233,14 +234,14 @@ namespace OsumeProject
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", databaseManager.connection);
+                    SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", Osume.databaseManager.connection);
                     command.Parameters.AddWithValue("songID", currentSong.id);
                     command.Parameters.AddWithValue("timeSaved", DateTime.Now);
                     command.Parameters.AddWithValue("username", factory.getSingleton().username);
                     command.ExecuteNonQuery();
                     factory.getSingleton().apiClient.addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
                     await updateAudioFeatures(currentSong, false);
-                    await updateGenres(currentSong, true, false);
+                    updateGenres(currentSong, true, false);
                     songsPlayed.push(currentSong);
                     previousSongsLiked.push(true);
                     await loadSong();
@@ -268,20 +269,20 @@ namespace OsumeProject
             DataTable featureData = null;
             if (liked)
             {
-                SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+                SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.databaseManager.connection);
                 getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
-                featureData = databaseManager.returnSearchedTable(getCurrentFeatures);
+                featureData = Osume.databaseManager.returnSearchedTable(getCurrentFeatures);
             }
             if (featureData == null)
             {
                 // clicked dislike
-                await updateGenres(track, false, true);
+                updateGenres(track, false, true);
             } else
             {
                 // clicked like
-                await updateGenres(track, true, true);
+                updateGenres(track, true, true);
                 await updateAudioFeatures(track, true);
-                SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", databaseManager.connection);
+                SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", Osume.databaseManager.connection);
                 deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
                 deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
                 deleteFromLibrary.ExecuteNonQuery();
@@ -289,7 +290,7 @@ namespace OsumeProject
             }
 
         }
-        private async Task updateGenres(OsumeTrack track, bool like, bool undo)
+        private void updateGenres(OsumeTrack track, bool like, bool undo)
         {
             OList<string> addedGenres = new OList<string>();
             foreach (OsumeArtist artist in track.artists)
@@ -299,7 +300,7 @@ namespace OsumeProject
                     if (!addedGenres.contains(genre))
                     {
                         addedGenres.add(genre);
-                        await databaseManager.updateGenres(genre, like, undo);
+                        Osume.databaseManager.updateGenres(genre, like, undo);
                     }
                 }
             }
@@ -307,10 +308,11 @@ namespace OsumeProject
 
         private async Task updateAudioFeatures(OsumeTrack track, bool undo)
         {
-            SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+            SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.databaseManager.connection);
             getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
-            DataTable data = databaseManager.returnSearchedTable(getCurrentFeatures);
-            await databaseManager.updateAudioFeatures(track, data, undo);
+            DataTable data = Osume.databaseManager.returnSearchedTable(getCurrentFeatures);
+            Dictionary<string, double> audioFeatures = await Osume.getApiClient().getAudioFeatures(track.id);
+            Osume.databaseManager.updateAudioFeatures(track, data, undo, audioFeatures);
         }
         private async void dislikeButtonClick(object sender, RoutedEventArgs e)
         {
@@ -322,7 +324,7 @@ namespace OsumeProject
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    await updateGenres(currentSong, false, false);
+                    updateGenres(currentSong, false, false);
                     songsPlayed.push(currentSong);
                     previousSongsLiked.push(true);
                     await loadSong();
@@ -338,11 +340,11 @@ namespace OsumeProject
         
         private void toggleRecommendationStrength(object sender, RoutedEventArgs e)
         {
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", databaseManager.connection);
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
             checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = databaseManager.returnSearchedTable(checkRecSettings);
+            DataTable result = Osume.databaseManager.returnSearchedTable(checkRecSettings);
             int strength = Convert.ToInt32(result.Rows[0][0]);
-            SQLiteCommand changeRecStrengthSettings = new SQLiteCommand("UPDATE userSettings SET recommendationStrength = @strength WHERE username = @username", databaseManager.connection);
+            SQLiteCommand changeRecStrengthSettings = new SQLiteCommand("UPDATE userSettings SET recommendationStrength = @strength WHERE username = @username", Osume.databaseManager.connection);
             changeRecStrengthSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
             if (strength == 0)
             {
@@ -391,16 +393,16 @@ namespace OsumeProject
                 }
             }
         }
-        private async Task setThread(string playbackURL)
+        private void setThread(string playbackURL)
         {
             playMP3 = new Thread(() => PlayMp3FromUrl(playbackURL));
             playMP3.IsBackground = true;
         }
         private async void loadWindow()
         {
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", databaseManager.connection);
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
             checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = databaseManager.returnSearchedTable(checkRecSettings);
+            DataTable result = Osume.databaseManager.returnSearchedTable(checkRecSettings);
             int strength = Convert.ToInt32(result.Rows[0][0]);
             if (strength == 0)
             {
@@ -456,9 +458,9 @@ namespace OsumeProject
 
                     if (song.isExplicit)
                     {
-                        SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", databaseManager.connection);
+                        SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
                         checkExplicitSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
-                        DataTable table0 = databaseManager.returnSearchedTable(checkExplicitSetting);
+                        DataTable table0 = Osume.databaseManager.returnSearchedTable(checkExplicitSetting);
                         if (Convert.ToInt32(table0.Rows[0][0]) == 0)
                         {
                             allowed = false;
@@ -468,7 +470,7 @@ namespace OsumeProject
                     {
                         allowed = true;
                     }
-                    SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", databaseManager.connection);
+                    SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", Osume.databaseManager.connection);
                     searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
                     if (song.artists.Length > 0)
                     {
@@ -478,11 +480,11 @@ namespace OsumeProject
                     {
                         searchBlockList.Parameters.AddWithValue("@artistID", "null");
                     }
-                    DataTable table1 = databaseManager.returnSearchedTable(searchBlockList);
-                    SQLiteCommand searchSavedSong = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username AND songID = @songID", databaseManager.connection);
+                    DataTable table1 = Osume.databaseManager.returnSearchedTable(searchBlockList);
+                    SQLiteCommand searchSavedSong = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username AND songID = @songID", Osume.databaseManager.connection);
                     searchSavedSong.Parameters.AddWithValue("@username", factory.getSingleton().username);
                     searchSavedSong.Parameters.AddWithValue("@songID", song.id);
-                    DataTable table2 = databaseManager.returnSearchedTable(searchSavedSong);
+                    DataTable table2 = Osume.databaseManager.returnSearchedTable(searchSavedSong);
                     if (table1.Rows.Count == 0 && table2.Rows.Count == 0 && allowed == true)
                     {
                         validSong = true;
@@ -509,7 +511,7 @@ namespace OsumeProject
                             }
                             albumTitle.Text = "💿 " + song.album.name;
                             currentSong = song;
-                            await setThread(song.previewURL);
+                            setThread(song.previewURL);
                             playMP3.Start();
                         }
                     } else

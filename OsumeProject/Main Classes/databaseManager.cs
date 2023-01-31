@@ -20,23 +20,29 @@ using System.Threading.Tasks;
 
 namespace OsumeProject
 {
-    public static class databaseManager
+    public class databaseManager
     {
-        public static SQLiteConnection connection = new SQLiteConnection("Data Source=database.db");
-        public static bool open = false;
+        public SQLiteConnection connection;
+        public bool open;
 
-        public static DataTable returnSearchedTable(SQLiteCommand command)
+        public databaseManager(SQLiteConnection connection)
+        {
+            this.connection = connection;
+            open = false;
+        }
+
+        public DataTable returnSearchedTable(SQLiteCommand command)
         {
             var reader = command.ExecuteReader();
             DataTable data = new DataTable();
             data.Load(reader);
             return data;
         }
-        public static async Task updateGenres(string genre, bool like, bool undo)
+        public void updateGenres(string genre, bool like, bool undo)
         {
             try
             {
-                SQLiteCommand updateGenre = new SQLiteCommand("INSERT INTO genre (genreName, username, numOfLikedSongs, numOfDislikedSongs) VALUES (?, ?, ?, ?)", databaseManager.connection);
+                SQLiteCommand updateGenre = new SQLiteCommand("INSERT INTO genre (genreName, username, numOfLikedSongs, numOfDislikedSongs) VALUES (?, ?, ?, ?)", this.connection);
                 updateGenre.Parameters.AddWithValue("genreName", genre);
                 updateGenre.Parameters.AddWithValue("username", factory.getSingleton().username);
                 updateGenre.Parameters.AddWithValue("numOfLikedSongs", 1);
@@ -50,11 +56,11 @@ namespace OsumeProject
                     SQLiteCommand decrementGenreValues;
                     if (like)
                     {
-                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs - 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs - 1 WHERE genreName = @genreName AND username = @user", this.connection);
                     }
                     else
                     {
-                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs - 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs - 1 WHERE genreName = @genreName AND username = @user", this.connection);
                     }
                     decrementGenreValues.Parameters.AddWithValue("@genreName", genre);
                     decrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
@@ -65,11 +71,11 @@ namespace OsumeProject
                     SQLiteCommand incrementGenreValues;
                     if (like)
                     {
-                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs + 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs + 1 WHERE genreName = @genreName AND username = @user", this.connection);
                     }
                     else
                     {
-                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs + 1 WHERE genreName = @genreName AND username = @user", databaseManager.connection);
+                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs + 1 WHERE genreName = @genreName AND username = @user", this.connection);
                     }
                     incrementGenreValues.Parameters.AddWithValue("@genreName", genre);
                     incrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
@@ -78,9 +84,8 @@ namespace OsumeProject
             }
         }
 
-        public static async Task updateAudioFeatures(OsumeTrack track, DataTable data, bool undo)
+        public void updateAudioFeatures(OsumeTrack track, DataTable data, bool undo, Dictionary<string, double> audioFeatures)
         {
-            Dictionary<string, double> audioFeatures = await factory.getSingleton().apiClient.getAudioFeatures(track.id);
             if (audioFeatures == null) return;
             double totalDanceability = 0;
             double totalEnergy = 0;
@@ -93,7 +98,7 @@ namespace OsumeProject
             SQLiteCommand updateFeatures = new SQLiteCommand("UPDATE audioFeature SET count = @count, danceabilityTotal = @danceabilityTotal, " +
     "energyTotal = @energyTotal, speechinessTotal = @speechinessTotal, acousticnessTotal = @acousticnessTotal, " +
     "instrumentalnessTotal = @instrumentalnessTotal, livenessTotal = @livenessTotal, valenceTotal = @valenceTotal " +
-    "WHERE username = @user", databaseManager.connection);
+    "WHERE username = @user", this.connection);
 
             if (undo)
             {

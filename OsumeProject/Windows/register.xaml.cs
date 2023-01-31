@@ -29,8 +29,10 @@ namespace OsumeProject
     /// </summary>
     public partial class register : Window
     {
-        public register()
+        public Osume Osume;
+        public register(ref Osume Osume)
         {
+            this.Osume = Osume;
             InitializeComponent();
         }
 
@@ -47,7 +49,7 @@ namespace OsumeProject
 
         private void backButtonClick(object sender, RoutedEventArgs e)
         {
-            mainscreenselect mss = new mainscreenselect();
+            mainscreenselect mss = new mainscreenselect(ref Osume);
             mss.Show();
             this.Close();
         }
@@ -80,13 +82,13 @@ namespace OsumeProject
             }
             OsumeTrack[] recentTopTracks = await factory.getSingleton().apiClient.getTopTracks("short_term", 50);
             OsumeArtist[] recentTopArtists = await factory.getSingleton().apiClient.getTopArtists("short_term", 50);
-            SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+            SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.databaseManager.connection);
             searchFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
             foreach (OsumeArtist artist in recentTopArtists)
             {
                 foreach (string genre in artist.genres)
                 {
-                    await databaseManager.updateGenres(genre, true, false);
+                    Osume.databaseManager.updateGenres(genre, true, false);
                 }
                 foreach (Window window in Application.Current.Windows)
                 {
@@ -98,10 +100,11 @@ namespace OsumeProject
             }
             foreach (OsumeTrack track in recentTopTracks)
             {
-                DataTable data = databaseManager.returnSearchedTable(searchFeatures);
+                DataTable data = Osume.databaseManager.returnSearchedTable(searchFeatures);
                 if (data.Rows.Count >= 0)
                 {
-                    await databaseManager.updateAudioFeatures(track, data, false);
+                    Dictionary<string, double> audioFeatures = await Osume.getApiClient().getAudioFeatures(track.id);
+                    Osume.databaseManager.updateAudioFeatures(track, data, false, audioFeatures);
                 }
                 foreach (Window window in Application.Current.Windows)
                 {
@@ -151,9 +154,9 @@ namespace OsumeProject
                 errorMessageBox.Text = "Error! Passwords do not match!";
                 return;
             }
-            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", databaseManager.connection);
+            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
             countCommand.Parameters.AddWithValue("@user", usernameInput.Text);
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
             command.Parameters.AddWithValue("@user", usernameInput.Text);
             try
             {
@@ -235,14 +238,14 @@ namespace OsumeProject
                             factory.getSingleton().userID = userID;
                             string playlistID = await factory.getSingleton().apiClient.createPlaylist(userID);
                             factory.getSingleton().playlistID = playlistID;
-                            SQLiteCommand insertUserAccountRow = new SQLiteCommand("INSERT INTO userAccount (username, hashedPassword, accessToken, playlistID, spotifyID) VALUES (?, ?, ?, ?, ?)", databaseManager.connection);
+                            SQLiteCommand insertUserAccountRow = new SQLiteCommand("INSERT INTO userAccount (username, hashedPassword, accessToken, playlistID, spotifyID) VALUES (?, ?, ?, ?, ?)", Osume.databaseManager.connection);
                             insertUserAccountRow.Parameters.AddWithValue("username", usernameInput.Text);
                             insertUserAccountRow.Parameters.AddWithValue("hashedPassword", hashedPassword);
                             insertUserAccountRow.Parameters.AddWithValue("accessToken", result.refresh_token);
                             insertUserAccountRow.Parameters.AddWithValue("playlistID", playlistID);
                             insertUserAccountRow.Parameters.AddWithValue("spotifyID", userID);
                             insertUserAccountRow.ExecuteNonQuery();
-                            SQLiteCommand insertFeaturesRow = new SQLiteCommand("INSERT INTO audioFeature (username, count, danceabilityTotal, energyTotal, speechinessTotal, acousticnessTotal, instrumentalnessTotal, livenessTotal, valenceTotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", databaseManager.connection);
+                            SQLiteCommand insertFeaturesRow = new SQLiteCommand("INSERT INTO audioFeature (username, count, danceabilityTotal, energyTotal, speechinessTotal, acousticnessTotal, instrumentalnessTotal, livenessTotal, valenceTotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Osume.databaseManager.connection);
                             insertFeaturesRow.Parameters.AddWithValue("username", usernameInput.Text);
                             insertFeaturesRow.Parameters.AddWithValue("count", 0);
                             insertFeaturesRow.Parameters.AddWithValue("danceabilityTotal", 0);
@@ -253,7 +256,7 @@ namespace OsumeProject
                             insertFeaturesRow.Parameters.AddWithValue("livenessTotal", 0);
                             insertFeaturesRow.Parameters.AddWithValue("valenceTotal", 0);
                             insertFeaturesRow.ExecuteNonQuery();
-                            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (explicitTracks, recommendationStrength, username) VALUES (?, ?, ?)", databaseManager.connection);
+                            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (explicitTracks, recommendationStrength, username) VALUES (?, ?, ?)", Osume.databaseManager.connection);
                             insertUserSettingsRow.Parameters.AddWithValue("explicitTracks", true);
                             insertUserSettingsRow.Parameters.AddWithValue("recommendationStrength", 1);
                             insertUserSettingsRow.Parameters.AddWithValue("username", usernameInput.Text);
@@ -269,7 +272,7 @@ namespace OsumeProject
                 Trace.WriteLine(err);
             }
             Thread.Sleep(5000);
-            homepage homescreen = new homepage();
+            homepage homescreen = new homepage(ref Osume);
             homescreen.Show();
             this.Close();
         }

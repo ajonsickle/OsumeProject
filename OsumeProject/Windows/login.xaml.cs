@@ -24,7 +24,8 @@ namespace OsumeProject
     /// </summary>
     public partial class login : Window
     {
-        public login()
+        public Osume Osume;
+        public login(ref Osume Osume)
         {
             InitializeComponent();
         }
@@ -63,9 +64,9 @@ namespace OsumeProject
         private async void loginButtonClick(object sender, RoutedEventArgs e)
         {
             var username = usernameInput.Text;
-            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", databaseManager.connection);
+            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
             countCommand.Parameters.AddWithValue("@user", username);
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
             command.Parameters.AddWithValue("@user", username);
             try
             {
@@ -87,7 +88,7 @@ namespace OsumeProject
                         else admin = true;
                     }
                     string hashedPassword = sha1(passwordInput.Password);
-                    DataTable data = databaseManager.returnSearchedTable(command);
+                    DataTable data = Osume.databaseManager.returnSearchedTable(command);
                     bool validPassword = false;
                     if ((string)data.Rows[0][1] == hashedPassword)
                     {
@@ -120,7 +121,7 @@ namespace OsumeProject
                 Trace.WriteLine(err);
                 
             }
-            homepage homepageWindow = new homepage();
+            homepage homepageWindow = new homepage(ref Osume);
             homepageWindow.Show();
             this.Close();
         }
