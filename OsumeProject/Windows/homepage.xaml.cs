@@ -31,7 +31,7 @@ namespace OsumeProject
     /// </summary>
     public partial class homepage : Window
     {
-        Osume Osume;
+        public Osume Osume;
         DateTime timeStamp;
         private Thread playMP3;
         public OsumeTrack currentSong;
@@ -43,9 +43,10 @@ namespace OsumeProject
 
         public homepage(ref Osume Osume)
         {
+            this.Osume = Osume;
             InitializeComponent();
             loadWindow();
-            this.Osume = Osume;
+
         }
 
         private void ellipse_MouseUp(object sender, MouseButtonEventArgs e)
@@ -70,7 +71,7 @@ namespace OsumeProject
         }
         private void settingsButtonClick(object sender, RoutedEventArgs e)
         {
-            settings settingsWindow = new settings();
+            settings settingsWindow = new settings(ref Osume);
             settingsWindow.Show();
             if (playMP3 != null)
             {
@@ -239,7 +240,7 @@ namespace OsumeProject
                     command.Parameters.AddWithValue("timeSaved", DateTime.Now);
                     command.Parameters.AddWithValue("username", factory.getSingleton().username);
                     command.ExecuteNonQuery();
-                    factory.getSingleton().apiClient.addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
+                    Osume.getApiClient().addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
                     await updateAudioFeatures(currentSong, false);
                     updateGenres(currentSong, true, false);
                     songsPlayed.push(currentSong);
@@ -286,7 +287,7 @@ namespace OsumeProject
                 deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
                 deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
                 deleteFromLibrary.ExecuteNonQuery();
-                factory.getSingleton().apiClient.removeFromPlaylist(factory.getSingleton().playlistID, new string[]{ track.id });
+                Osume.getApiClient().removeFromPlaylist(factory.getSingleton().playlistID, new string[]{ track.id });
             }
 
         }
@@ -400,7 +401,7 @@ namespace OsumeProject
         }
         private async void loadWindow()
         {
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", this.Osume.databaseManager.connection);
             checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable result = Osume.databaseManager.returnSearchedTable(checkRecSettings);
             int strength = Convert.ToInt32(result.Rows[0][0]);
@@ -409,7 +410,7 @@ namespace OsumeProject
                 ChangeRecButton.Content = "Expanding Taste";
                 ChangeRecButton.Template = (ControlTemplate)this.Resources["pinkButton"];
             }
-            await factory.getSingleton().getRefreshToken();
+            await Osume.getApiClient().getRefreshToken();
             try
             {
                 await loadSong();
@@ -441,7 +442,7 @@ namespace OsumeProject
                     {
                         if (songsToPlay.getLength() == 0)
                         {
-                            song = await factory.getSingleton().apiClient.getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
+                            song = await Osume.getApiClient().getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
                         } else
                         {
                             song = songsToPlay.pop();
@@ -500,7 +501,7 @@ namespace OsumeProject
                         if (song.artists.Length > 0) {
                             artistName.Text = "🧑‍🎤" + song.artists[0].name;
                             yearReleased.Text = "📅 " + song.album.release_date;
-                            OsumeArtist genreSearch = await factory.getSingleton().apiClient.getArtist(song.artists[0].id);
+                            OsumeArtist genreSearch = await Osume.getApiClient().getArtist(song.artists[0].id);
                             if (genreSearch.genres.Length > 0)
                             {
                                 genre.Text = "🏷 " + Regex.Replace(genreSearch.genres[0], @"(^\w)|(\s\w)", m => m.Value.ToUpper());

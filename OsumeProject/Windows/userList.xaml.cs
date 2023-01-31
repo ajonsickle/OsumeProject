@@ -22,10 +22,13 @@ namespace OsumeProject
     /// </summary>
     public partial class userList : Window
     {
-        public userList()
+        public Osume Osume;
+        public userList(ref Osume Osume)
         {
+            this.Osume = Osume;
             InitializeComponent();
             loadUserList();
+
         }
 
         private void profilePictureClick(object sender, RoutedEventArgs e)
@@ -39,7 +42,7 @@ namespace OsumeProject
         }
         private void backButtonClick(object sender, RoutedEventArgs e)
         {
-            settings settingsWindow = new settings();
+            settings settingsWindow = new settings(ref Osume);
             settingsWindow.Show();
             this.Close();
         }
@@ -47,11 +50,11 @@ namespace OsumeProject
         private void removeButtonClick(object sender, RoutedEventArgs e)
         {
             string name = ((Button)sender).Name[12].ToString();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", Osume.databaseManager.connection);
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = databaseManager.returnSearchedTable(command);
+            DataTable data = Osume.databaseManager.returnSearchedTable(command);
             DataRow row = data.Rows[Convert.ToInt32(name)];
-            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM userAccount WHERE username = @username", databaseManager.connection);
+            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM userAccount WHERE username = @username", Osume.databaseManager.connection);
             removeSong.Parameters.AddWithValue("@username", row[0]);
             removeSong.ExecuteNonQuery();
             loadUserList();
@@ -62,9 +65,9 @@ namespace OsumeProject
             ImageBrush brush = new ImageBrush();
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             usersList.Children.Clear();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", Osume.databaseManager.connection);
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = databaseManager.returnSearchedTable(command);
+            DataTable data = Osume.databaseManager.returnSearchedTable(command);
             int rectangleTopMargin = 0;
             int number = 0;
             foreach (DataRow row in data.Rows)
@@ -73,13 +76,13 @@ namespace OsumeProject
                 {
                     string username = row[0].ToString();
                     string imageURI = factory.getSingleton().pfpURL;
-                    var response = await factory.getSingleton().apiClient.client.GetAsync(imageURI);
+                    var response = await Osume.getApiClient().client.GetAsync(imageURI);
                     var stream = await response.Content.ReadAsStreamAsync();
                     var memoryStream = new MemoryStream();
                     await stream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
                     Bitmap image = new Bitmap(memoryStream);
-                    library wind = new library();
+                    library wind = new library(ref Osume);
                     int[] rgbValues = wind.getAvgColor(image);
                     System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle()
                     {

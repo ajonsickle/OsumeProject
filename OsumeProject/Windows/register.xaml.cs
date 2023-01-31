@@ -49,7 +49,7 @@ namespace OsumeProject
 
         private void backButtonClick(object sender, RoutedEventArgs e)
         {
-            mainscreenselect mss = new mainscreenselect(ref Osume);
+            mainscreenselect mss = new mainscreenselect();
             mss.Show();
             this.Close();
         }
@@ -80,8 +80,8 @@ namespace OsumeProject
                     (window as register).analyseText.Visibility = Visibility.Visible;
                 }
             }
-            OsumeTrack[] recentTopTracks = await factory.getSingleton().apiClient.getTopTracks("short_term", 50);
-            OsumeArtist[] recentTopArtists = await factory.getSingleton().apiClient.getTopArtists("short_term", 50);
+            OsumeTrack[] recentTopTracks = await Osume.getApiClient().getTopTracks("short_term", 50);
+            OsumeArtist[] recentTopArtists = await Osume.getApiClient().getTopArtists("short_term", 50);
             SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.databaseManager.connection);
             searchFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
             foreach (OsumeArtist artist in recentTopArtists)
@@ -218,8 +218,8 @@ namespace OsumeProject
                         });
                         if (admin == true) factory.createSingleton(true);
                         else factory.createSingleton(false);
-                        getAccessToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(factory.getSingleton().apiClient.clientID + ":" + factory.getSingleton().apiClient.clientSecret)));
-                        var token = await factory.getSingleton().apiClient.client.SendAsync(getAccessToken);
+                        getAccessToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Osume.getApiClient().clientID + ":" + Osume.getApiClient().clientSecret)));
+                        var token = await Osume.getApiClient().client.SendAsync(getAccessToken);
                         if (!token.IsSuccessStatusCode)
                         {
                             factory.deleteSingleton();
@@ -231,12 +231,12 @@ namespace OsumeProject
                             factory.getSingleton().accessToken = result.refresh_token;
                             factory.getSingleton().currentToken = result.access_token;
                             factory.getSingleton().username = usernameInput.Text;
-                            await factory.getSingleton().getRefreshToken();
-                            string userID = await factory.getSingleton().apiClient.getCurrentUserID();
-                            string pfpURL = await factory.getSingleton().apiClient.getCurrentUserPFP();
+                            await Osume.getApiClient().getRefreshToken();
+                            string userID = await Osume.getApiClient().getCurrentUserID();
+                            string pfpURL = await Osume.getApiClient().getCurrentUserPFP();
                             factory.getSingleton().pfpURL = pfpURL;
                             factory.getSingleton().userID = userID;
-                            string playlistID = await factory.getSingleton().apiClient.createPlaylist(userID);
+                            string playlistID = await Osume.getApiClient().createPlaylist(userID);
                             factory.getSingleton().playlistID = playlistID;
                             SQLiteCommand insertUserAccountRow = new SQLiteCommand("INSERT INTO userAccount (username, hashedPassword, accessToken, playlistID, spotifyID) VALUES (?, ?, ?, ?, ?)", Osume.databaseManager.connection);
                             insertUserAccountRow.Parameters.AddWithValue("username", usernameInput.Text);

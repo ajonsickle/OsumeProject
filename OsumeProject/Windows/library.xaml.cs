@@ -27,6 +27,7 @@ namespace OsumeProject
         public Osume Osume;
         public library(ref Osume Osume)    
         {
+            this.Osume = Osume;
             InitializeComponent();
             loadLibrary();
         }
@@ -75,9 +76,9 @@ namespace OsumeProject
             {
                 try
                 {
-                    OsumeTrack song = await factory.getSingleton().apiClient.getTrack(row[0].ToString());
+                    OsumeTrack song = await Osume.getApiClient().getTrack(row[0].ToString());
                     string imageURI = song.album.coverImages[64];
-                    var response = await factory.getSingleton().apiClient.client.GetAsync(imageURI);
+                    var response = await Osume.getApiClient().client.GetAsync(imageURI);
                     var stream = await response.Content.ReadAsStreamAsync();
                     var memoryStream = new MemoryStream();
                     await stream.CopyToAsync(memoryStream);
@@ -147,7 +148,7 @@ namespace OsumeProject
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable data = Osume.databaseManager.returnSearchedTable(command);
             DataRow row = data.Rows[Convert.ToInt32(name)];
-            factory.getSingleton().apiClient.removeFromPlaylist(factory.getSingleton().playlistID, new string[] { row[0].ToString() });
+            Osume.getApiClient().removeFromPlaylist(factory.getSingleton().playlistID, new string[] { row[0].ToString() });
             SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @id", Osume.databaseManager.connection);
             removeSong.Parameters.AddWithValue("@id", row[0]);
             removeSong.ExecuteNonQuery();
@@ -161,7 +162,7 @@ namespace OsumeProject
         }
         private void settingsButtonClick(object sender, RoutedEventArgs e)
         {
-            settings settingsWindow = new settings();
+            settings settingsWindow = new settings(ref Osume);
             settingsWindow.Show();
             this.Close();
         }

@@ -27,6 +27,7 @@ namespace OsumeProject
         public Osume Osume;
         public login(ref Osume Osume)
         {
+            this.Osume = Osume;
             InitializeComponent();
         }
 
@@ -103,13 +104,13 @@ namespace OsumeProject
                         else factory.createSingleton(false);
                         factory.getSingleton().accessToken = (string)data.Rows[0][2];
                         factory.getSingleton().username = username;
-                        await factory.getSingleton().getRefreshToken();
-                        string userID = await factory.getSingleton().apiClient.getCurrentUserID();
-                        string pfpURL = await factory.getSingleton().apiClient.getCurrentUserPFP();
+                        await Osume.getApiClient().getRefreshToken();
+                        string userID = await Osume.getApiClient().getCurrentUserID();
+                        string pfpURL = await Osume.getApiClient().getCurrentUserPFP();
                         factory.getSingleton().pfpURL = pfpURL;
                         factory.getSingleton().userID = userID;
                         factory.getSingleton().playlistID = (string)data.Rows[0][3];
-                        await factory.getSingleton().getRefreshToken();
+                        await Osume.getApiClient().getRefreshToken();
                     } else
                     {
                         errorMessageBox.Text = "Incorrect password!";

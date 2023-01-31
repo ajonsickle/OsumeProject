@@ -175,6 +175,21 @@ namespace OsumeProject
             }
             return artistList.convertToArray();
         }
+        public async Task getRefreshToken()
+        {
+            var getRefreshedToken = new HttpRequestMessage(HttpMethod.Post, "https://accounts.spotify.com/api/token");
+            getRefreshedToken.Content = new FormUrlEncodedContent(new Dictionary<string, string>()
+            {
+                  {"grant_type", "refresh_token"},
+                  {"refresh_token", factory.getSingleton().accessToken},
+            });
+            getRefreshedToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(clientID + ":" + clientSecret)));
+            var token = await client.SendAsync(getRefreshedToken);
+            token.EnsureSuccessStatusCode();
+            using var stream = await token.Content.ReadAsStreamAsync();
+            var result = await System.Text.Json.JsonSerializer.DeserializeAsync<RefreshTokenResponseTemp>(stream);
+            factory.getSingleton().currentToken = result.access_token;
+        }
 
         public async Task<Stream> genericHTTPRequest(string method, string uri, object bodyParameters = null)
         {

@@ -25,19 +25,21 @@ namespace OsumeProject
     /// </summary>
     public partial class settings : Window
     {
-        public settings()
+        public Osume Osume;
+        public settings(ref Osume Osume)
         {
+            this.Osume = Osume;
             InitializeComponent();
             loadSettings();
 
         }
 
-        private async void viewUsersClicked(object sender, RoutedEventArgs e)
+        private void viewUsersClicked(object sender, RoutedEventArgs e)
         {
             if (factory.getSingleton().admin != true) return;
             else
             {
-                userList userlistWindow = new userList();
+                userList userlistWindow = new userList(ref Osume);
                 userlistWindow.Show();
                 this.Close();
             }
@@ -45,16 +47,16 @@ namespace OsumeProject
 
         private void viewGenres(object sender, RoutedEventArgs e)
         {
-            genresView genresListWindow = new genresView();
+            genresView genresListWindow = new genresView(ref Osume);
             genresListWindow.Show();
             this.Close();
         }
         private void explicitTracksToggleClicked(object sender, RoutedEventArgs e)
         {
-            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", databaseManager.connection);
+            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
             checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = databaseManager.returnSearchedTable(checkExplicit);
-            SQLiteCommand changeSetting = new SQLiteCommand("UPDATE userSettings SET explicitTracks = @toggle WHERE username = @username", databaseManager.connection);
+            DataTable result = Osume.databaseManager.returnSearchedTable(checkExplicit);
+            SQLiteCommand changeSetting = new SQLiteCommand("UPDATE userSettings SET explicitTracks = @toggle WHERE username = @username", Osume.databaseManager.connection);
             changeSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
             if (Convert.ToInt32(result.Rows[0][0]) == 1)
             {
@@ -71,9 +73,9 @@ namespace OsumeProject
         {
             if (factory.getSingleton().admin == true) viewUsersAdmin.Visibility = Visibility.Visible;
             else viewUsersAdmin.Visibility = Visibility.Hidden;
-            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", databaseManager.connection);
+            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
             checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = databaseManager.returnSearchedTable(checkExplicit);
+            DataTable result = Osume.databaseManager.returnSearchedTable(checkExplicit);
             if (Convert.ToInt32(result.Rows[0][0]) == 0) {
                 explicitTracksToggle.Content = "Explicit Tracks Off";
             }
@@ -81,24 +83,24 @@ namespace OsumeProject
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
             blockedArtists.Children.Clear();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", Osume.databaseManager.connection);
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = databaseManager.returnSearchedTable(command);
+            DataTable data = Osume.databaseManager.returnSearchedTable(command);
             int rectangleTopMargin = 10;
             int number = 0;
             foreach (DataRow row in data.Rows)
             {
                 try
                 {
-                    OsumeArtist artist = await factory.getSingleton().apiClient.getArtist(row[0].ToString());
+                    OsumeArtist artist = await Osume.getApiClient().getArtist(row[0].ToString());
                     string imageURI = artist.image;
-                    var response = await factory.getSingleton().apiClient.client.GetAsync(imageURI);
+                    var response = await Osume.getApiClient().client.GetAsync(imageURI);
                     var stream = await response.Content.ReadAsStreamAsync();
                     var memoryStream = new MemoryStream();
                     await stream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
                     Bitmap image = new Bitmap(memoryStream);
-                    library wind = new library();
+                    library wind = new library(ref Osume);
                     int[] rgbValues = wind.getAvgColor(image);
                     System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle()
                     {
@@ -149,11 +151,11 @@ namespace OsumeProject
         private void removeButtonClick(object sender, RoutedEventArgs e)
         {
             string name = ((Button)sender).Name[12].ToString();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", Osume.databaseManager.connection);
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = databaseManager.returnSearchedTable(command);
+            DataTable data = Osume.databaseManager.returnSearchedTable(command);
             DataRow row = data.Rows[Convert.ToInt32(name)];
-            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockList WHERE artistID = @id", databaseManager.connection);
+            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockList WHERE artistID = @id", Osume.databaseManager.connection);
             removeArtist.Parameters.AddWithValue("@id", row[0]);
             removeArtist.ExecuteNonQuery();
             loadSettings();
@@ -169,9 +171,9 @@ namespace OsumeProject
         }
         private async void blockArtistButtonClick(object sender, RoutedEventArgs e)
         {
-            OsumeArtist artist = await factory.getSingleton().apiClient.getArtistByName(blockArtistText.Text);
+            OsumeArtist artist = await Osume.getApiClient().getArtistByName(blockArtistText.Text);
             if (artist == null) return;
-            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockList (artistID, timeSaved, username) VALUES (?, ?, ?)", databaseManager.connection);
+            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockList (artistID, timeSaved, username) VALUES (?, ?, ?)", Osume.databaseManager.connection);
             comm.Parameters.AddWithValue("@artistID", artist.id);
             comm.Parameters.AddWithValue("@timeSaved", DateTime.Now);
             comm.Parameters.AddWithValue("@username", factory.getSingleton().username);
@@ -180,13 +182,13 @@ namespace OsumeProject
         }
         private void homeButtonClick(object sender, RoutedEventArgs e)
         {
-            homepage homeWindow = new homepage();
+            homepage homeWindow = new homepage(ref Osume);
             homeWindow.Show();
             this.Close();
         }
         private void libraryButtonClick(object sender, RoutedEventArgs e)
         {
-            library libraryWindow = new library();
+            library libraryWindow = new library(ref Osume);
             libraryWindow.Show();
             this.Close();
         }

@@ -20,8 +20,10 @@ namespace OsumeProject.Windows
     {
         OList<string> genres = new OList<string>();
         bool ascending = true;
-        public genresView()
+        public Osume Osume;
+        public genresView(ref Osume Osume)
         {
+            this.Osume = Osume;
             InitializeComponent();
             StreamReader sr = new StreamReader("genresList.txt");
             while (sr.Peek() != -1)
@@ -30,10 +32,11 @@ namespace OsumeProject.Windows
             }
             sr.Close();
             loadList();
+
         }
         private void backButtonClick(object sender, RoutedEventArgs e)
         {
-            settings settingsWindow = new settings();
+            settings settingsWindow = new settings(ref Osume);
             settingsWindow.Show();
             this.Close();
         }
