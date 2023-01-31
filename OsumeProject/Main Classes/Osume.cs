@@ -6,6 +6,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace OsumeProject
 {
@@ -148,6 +149,29 @@ namespace OsumeProject
                 sortedRecs = recommendations.OrderByDescending(key => key.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
             }
             return sortedRecs;
+        }
+        public async Task updateAudioFeatures(OsumeTrack track, bool undo)
+        {
+            SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+            getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
+            DataTable data = databaseManager.returnSearchedTable(getCurrentFeatures);
+            Dictionary<string, double> audioFeatures = await getApiClient().getAudioFeatures(track.id);
+            databaseManager.updateAudioFeatures(track, data, undo, audioFeatures);
+        }
+        public void updateGenres(OsumeTrack track, bool like, bool undo)
+        {
+            OList<string> addedGenres = new OList<string>();
+            foreach (OsumeArtist artist in track.artists)
+            {
+                foreach (string genre in artist.genres)
+                {
+                    if (!addedGenres.contains(genre))
+                    {
+                        addedGenres.add(genre);
+                        databaseManager.updateGenres(genre, like, undo);
+                    }
+                }
+            }
         }
     }
 }

@@ -118,8 +118,8 @@ namespace OsumeProject
                     command.Parameters.AddWithValue("username", factory.getSingleton().username);
                     command.ExecuteNonQuery();
                     Osume.getApiClient().addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
-                    await updateAudioFeatures(currentSong, false);
-                    updateGenres(currentSong, true, false);
+                    await Osume.updateAudioFeatures(currentSong, false);
+                    Osume.updateGenres(currentSong, true, false);
                     songsPlayed.push(currentSong);
                     previousSongsLiked.push(true);
                     await loadSong();
@@ -154,12 +154,12 @@ namespace OsumeProject
             if (featureData == null)
             {
                 // clicked dislike
-                updateGenres(track, false, true);
+                Osume.updateGenres(track, false, true);
             } else
             {
                 // clicked like
-                updateGenres(track, true, true);
-                await updateAudioFeatures(track, true);
+                Osume.updateGenres(track, true, true);
+                await Osume.updateAudioFeatures(track, true);
                 SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", Osume.databaseManager.connection);
                 deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
                 deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
@@ -168,30 +168,9 @@ namespace OsumeProject
             }
 
         }
-        private void updateGenres(OsumeTrack track, bool like, bool undo)
-        {
-            OList<string> addedGenres = new OList<string>();
-            foreach (OsumeArtist artist in track.artists)
-            {
-                foreach (string genre in artist.genres)
-                {
-                    if (!addedGenres.contains(genre))
-                    {
-                        addedGenres.add(genre);
-                        Osume.databaseManager.updateGenres(genre, like, undo);
-                    }
-                }
-            }
-        }
 
-        private async Task updateAudioFeatures(OsumeTrack track, bool undo)
-        {
-            SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.databaseManager.connection);
-            getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
-            DataTable data = Osume.databaseManager.returnSearchedTable(getCurrentFeatures);
-            Dictionary<string, double> audioFeatures = await Osume.getApiClient().getAudioFeatures(track.id);
-            Osume.databaseManager.updateAudioFeatures(track, data, undo, audioFeatures);
-        }
+
+
         private async void dislikeButtonClick(object sender, RoutedEventArgs e)
         {
             if ((DateTime.Now - timeStamp).Ticks < 10000000) return;
@@ -202,7 +181,7 @@ namespace OsumeProject
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    updateGenres(currentSong, false, false);
+                    Osume.updateGenres(currentSong, false, false);
                     songsPlayed.push(currentSong);
                     previousSongsLiked.push(true);
                     await loadSong();
