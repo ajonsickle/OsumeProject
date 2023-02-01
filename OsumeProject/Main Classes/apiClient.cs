@@ -108,6 +108,14 @@ namespace OsumeProject
             else return "https://i.scdn.co/image/ab6761610000e5eb18bd995e53ed8e1e78cdce67";
         }
 
+        public async Task<string> getPFP(string userID)
+        {
+            var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/users/" + userID);
+            var result = await System.Text.Json.JsonSerializer.DeserializeAsync<GetProfileResponseTemp>(stream);
+            if (result.images.Length > 0) return result.images[0].url;
+            else return "https://i.scdn.co/image/ab6761610000e5eb18bd995e53ed8e1e78cdce67";
+        }
+
         public async Task<OsumeTrack[]> getTopTracks(string range, int limit)
         {
             var stream = await genericHTTPRequest("get", "https://api.spotify.com/v1/me/top/tracks?time_range=" + range + "&limit=" + limit);

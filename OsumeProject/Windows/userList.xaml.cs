@@ -75,7 +75,8 @@ namespace OsumeProject
                 try
                 {
                     string username = row[0].ToString();
-                    string imageURI = factory.getSingleton().pfpURL;
+                    string spotifyID = row[4].ToString();
+                    string imageURI = await Osume.getApiClient().getPFP(spotifyID);
                     var response = await Osume.getApiClient().client.GetAsync(imageURI);
                     var stream = await response.Content.ReadAsStreamAsync();
                     var memoryStream = new MemoryStream();

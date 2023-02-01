@@ -47,7 +47,6 @@ namespace OsumeProject
             }
             return vector.convertToArray();
         }
-
         public double[] getGenreTasteVector()
         {
             OList<double> vector = new OList<double>();
@@ -73,7 +72,6 @@ namespace OsumeProject
             }
             return vector.convertToArray();
         }
-
         public double calculateCosineSimilarity(double[] A, double[] B)
         {
             var dotProduct = calculateDotProduct(A, B);
@@ -82,7 +80,6 @@ namespace OsumeProject
 
             return dotProduct / (magnitudeA * magnitudeB);
         }
-
         public double calculateDotProduct(double[] A, double[] B)
         {
             double result = 0;
@@ -92,7 +89,6 @@ namespace OsumeProject
             }
             return result;
         }
-
         public double calculateMagnitude(double[] x)
         {
             double total = 0;
@@ -181,7 +177,6 @@ namespace OsumeProject
                 }
             }
         }
-
         public async Task undoChanges(OsumeTrack track, bool liked)
         {
             OList<string> addedGenres = new OList<string>();
@@ -220,7 +215,6 @@ namespace OsumeProject
             }
 
         }
-
         public void PlayMp3FromUrl(string url)
         {
             using (var client = new WebClient())
@@ -276,7 +270,6 @@ namespace OsumeProject
             int[] arr = { avgRed, avgBlue, avgGreen };
             return arr;
         }
-
         public string sha1(string input)
         {
             string output = "";
@@ -324,7 +317,7 @@ namespace OsumeProject
                         });
             if (admin == true) factory.createSingleton(true);
             else factory.createSingleton(false);
-            getAccessToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(Osume.getApiClient().clientID + ":" + Osume.getApiClient().clientSecret)));
+            getAccessToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(getApiClient().clientID + ":" + getApiClient().clientSecret)));
             var token = await getApiClient().client.SendAsync(getAccessToken);
             if (!token.IsSuccessStatusCode)
             {
@@ -343,14 +336,14 @@ namespace OsumeProject
             factory.getSingleton().userID = userID;
             string playlistID = await getApiClient().createPlaylist(userID);
             factory.getSingleton().playlistID = playlistID;
-            SQLiteCommand insertUserAccountRow = new SQLiteCommand("INSERT INTO userAccount (username, hashedPassword, accessToken, playlistID, spotifyID) VALUES (?, ?, ?, ?, ?)", Osume.databaseManager.connection);
+            SQLiteCommand insertUserAccountRow = new SQLiteCommand("INSERT INTO userAccount (username, hashedPassword, accessToken, playlistID, spotifyID) VALUES (?, ?, ?, ?, ?)", databaseManager.connection);
             insertUserAccountRow.Parameters.AddWithValue("username", usernameInput);
             insertUserAccountRow.Parameters.AddWithValue("hashedPassword", hashedPassword);
             insertUserAccountRow.Parameters.AddWithValue("accessToken", result.refresh_token);
             insertUserAccountRow.Parameters.AddWithValue("playlistID", playlistID);
             insertUserAccountRow.Parameters.AddWithValue("spotifyID", userID);
             insertUserAccountRow.ExecuteNonQuery();
-            SQLiteCommand insertFeaturesRow = new SQLiteCommand("INSERT INTO audioFeature (username, count, danceabilityTotal, energyTotal, speechinessTotal, acousticnessTotal, instrumentalnessTotal, livenessTotal, valenceTotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Osume.databaseManager.connection);
+            SQLiteCommand insertFeaturesRow = new SQLiteCommand("INSERT INTO audioFeature (username, count, danceabilityTotal, energyTotal, speechinessTotal, acousticnessTotal, instrumentalnessTotal, livenessTotal, valenceTotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", databaseManager.connection);
             insertFeaturesRow.Parameters.AddWithValue("username", usernameInput);
             insertFeaturesRow.Parameters.AddWithValue("count", 0);
             insertFeaturesRow.Parameters.AddWithValue("danceabilityTotal", 0);
@@ -361,7 +354,7 @@ namespace OsumeProject
             insertFeaturesRow.Parameters.AddWithValue("livenessTotal", 0);
             insertFeaturesRow.Parameters.AddWithValue("valenceTotal", 0);
             insertFeaturesRow.ExecuteNonQuery();
-            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (explicitTracks, recommendationStrength, username) VALUES (?, ?, ?)", Osume.databaseManager.connection);
+            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (explicitTracks, recommendationStrength, username) VALUES (?, ?, ?)", databaseManager.connection);
             insertUserSettingsRow.Parameters.AddWithValue("explicitTracks", true);
             insertUserSettingsRow.Parameters.AddWithValue("recommendationStrength", 1);
             insertUserSettingsRow.Parameters.AddWithValue("username", usernameInput);
