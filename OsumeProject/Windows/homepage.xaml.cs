@@ -80,7 +80,6 @@ namespace OsumeProject
             }
             this.Close();
         }
-
         private async void undo(object sender, RoutedEventArgs e)
         {
             if ((DateTime.Now - timeStamp).Ticks < 10000000) return;
@@ -94,14 +93,11 @@ namespace OsumeProject
                     playMP3.Interrupt();
                     playMP3 = null;
                     songsToPlay.push(currentSong);
-                    await undoChanges(song, liked);
+                    await Osume.undoChanges(song, liked);
                     await loadSong(song);
                 }
             }
         }
-
-        
-
         private async void likeButtonClick(object sender, RoutedEventArgs e)
         {
             if ((DateTime.Now - timeStamp).Ticks < 10000000) return;
@@ -131,46 +127,6 @@ namespace OsumeProject
                 await loadSong();
             }
         }
-        private async Task undoChanges(OsumeTrack track, bool liked)
-        {
-            OList<string> addedGenres = new OList<string>();
-            foreach (OsumeArtist artist in track.artists)
-            {
-                foreach (string genre in artist.genres)
-                {
-                    if (!addedGenres.contains(genre))
-                    {
-                        addedGenres.add(genre);
-                    }
-                }
-            }
-            DataTable featureData = null;
-            if (liked)
-            {
-                SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.databaseManager.connection);
-                getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
-                featureData = Osume.databaseManager.returnSearchedTable(getCurrentFeatures);
-            }
-            if (featureData == null)
-            {
-                // clicked dislike
-                Osume.updateGenres(track, false, true);
-            } else
-            {
-                // clicked like
-                Osume.updateGenres(track, true, true);
-                await Osume.updateAudioFeatures(track, true);
-                SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", Osume.databaseManager.connection);
-                deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
-                deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
-                deleteFromLibrary.ExecuteNonQuery();
-                Osume.getApiClient().removeFromPlaylist(factory.getSingleton().playlistID, new string[]{ track.id });
-            }
-
-        }
-
-
-
         private async void dislikeButtonClick(object sender, RoutedEventArgs e)
         {
             if ((DateTime.Now - timeStamp).Ticks < 10000000) return;
@@ -194,7 +150,6 @@ namespace OsumeProject
                 throw err;
             }
         }
-        
         private void toggleRecommendationStrength(object sender, RoutedEventArgs e)
         {
             SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
@@ -216,43 +171,9 @@ namespace OsumeProject
             }
             changeRecStrengthSettings.ExecuteNonQuery();
         }
-
-        public static void PlayMp3FromUrl(string url)
-        {
-            using (var client = new WebClient())
-            {
-                try
-                {
-                    client.DownloadFile(url, "song.mp3");
-                    var reader = new Mp3FileReader("song.mp3");
-                    var waveOut = new WaveOut();
-                    waveOut.Init(reader);
-                    waveOut.Play();
-                    while (waveOut.PlaybackState == PlaybackState.Playing)
-                    {
-                        try
-                        {
-                            Thread.Sleep(100);
-                        }
-                        catch (ThreadInterruptedException e)
-                        {
-                            Trace.WriteLine(e);
-                            reader.Close();
-                            return;
-                        }
-                    }
-                    reader.Close();
-                }
-                catch (Exception err)
-                {
-                    Trace.WriteLine(err);
-                    return;
-                }
-            }
-        }
         private void setThread(string playbackURL)
         {
-            playMP3 = new Thread(() => PlayMp3FromUrl(playbackURL));
+            playMP3 = new Thread(() => Osume.PlayMp3FromUrl(playbackURL));
             playMP3.IsBackground = true;
         }
         private async void loadWindow()

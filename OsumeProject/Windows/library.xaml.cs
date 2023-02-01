@@ -40,27 +40,7 @@ namespace OsumeProject
                 UseShellExecute = true
             });
         }
-        public int[] getAvgColor(Bitmap bmp)
-        {
-            int totalRed = 0;
-            int totalBlue = 0;
-            int totalGreen = 0;
-            for (int i = 0; i < bmp.Width - 1; i++)
-            {
-                for (int j = 0; j < bmp.Height - 1; j++)
-                {
-                    System.Drawing.Color colour = bmp.GetPixel(i, j);
-                    totalRed += colour.R;
-                    totalBlue += colour.B;
-                    totalGreen += colour.G;
-                }
-            }
-            int avgRed = (int)Math.Round((double)totalRed / (bmp.Height * bmp.Width));
-            int avgBlue = (int)Math.Round((double)totalBlue / (bmp.Height * bmp.Width));
-            int avgGreen = (int)Math.Round((double)totalGreen / (bmp.Height * bmp.Width));
-            int[] arr = { avgRed, avgBlue, avgGreen };
-            return arr;
-        }
+
         private async void loadLibrary()
         {
             ImageBrush brush = new ImageBrush();
@@ -84,7 +64,7 @@ namespace OsumeProject
                     await stream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
                     Bitmap image = new Bitmap(memoryStream);
-                    int[] rgbValues = getAvgColor(image);
+                    int[] rgbValues = Osume.getAvgColor(image);
                     System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle()
                     {
                         Width = 1200,

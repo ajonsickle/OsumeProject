@@ -100,8 +100,7 @@ namespace OsumeProject
                     await stream.CopyToAsync(memoryStream);
                     memoryStream.Position = 0;
                     Bitmap image = new Bitmap(memoryStream);
-                    library wind = new library(ref Osume);
-                    int[] rgbValues = wind.getAvgColor(image);
+                    int[] rgbValues = Osume.getAvgColor(image);
                     System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle()
                     {
                         Width = 450,
