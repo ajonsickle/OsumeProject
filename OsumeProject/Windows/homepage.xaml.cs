@@ -35,12 +35,7 @@ namespace OsumeProject
         DateTime timeStamp;
         private Thread playMP3;
         public OsumeTrack currentSong;
-        OStack<OsumeTrack> songsPlayed = new OStack<OsumeTrack>();
-        OStack<OsumeTrack> songsToPlay = new OStack<OsumeTrack>();
-        OStack<bool> previousSongsLiked = new OStack<bool>();
-        
-        bool undone = false;
-
+       
         public homepage(ref Osume Osume)
         {
             this.Osume = Osume;
@@ -60,6 +55,7 @@ namespace OsumeProject
         }
         private void libraryButtonClick(object sender, RoutedEventArgs e)
         {
+            Osume.songsToPlay.push(currentSong);
             library libraryWindow = new library(ref Osume);
             libraryWindow.Show();
             if (playMP3 != null)
@@ -71,6 +67,7 @@ namespace OsumeProject
         }
         private void settingsButtonClick(object sender, RoutedEventArgs e)
         {
+            Osume.songsToPlay.push(currentSong);
             settings settingsWindow = new settings(ref Osume);
             settingsWindow.Show();
             if (playMP3 != null)
@@ -84,15 +81,15 @@ namespace OsumeProject
         {
             if ((DateTime.Now - timeStamp).Ticks < 10000000) return;
             timeStamp = DateTime.Now;
-            if (songsPlayed.getLength() > 0)
+            if (Osume.songsPlayed.getLength() > 0)
             {
-                OsumeTrack song = songsPlayed.pop();
-                bool liked = previousSongsLiked.pop();
+                OsumeTrack song = Osume.songsPlayed.pop();
+                bool liked = Osume.previousSongsLiked.pop();
                 if (playMP3 != null)
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    songsToPlay.push(currentSong);
+                    Osume.songsToPlay.push(currentSong);
                     await Osume.undoChanges(song, liked);
                     await loadSong(song);
                 }
@@ -108,16 +105,7 @@ namespace OsumeProject
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", Osume.databaseManager.connection);
-                    command.Parameters.AddWithValue("songID", currentSong.id);
-                    command.Parameters.AddWithValue("timeSaved", DateTime.Now);
-                    command.Parameters.AddWithValue("username", factory.getSingleton().username);
-                    command.ExecuteNonQuery();
-                    Osume.getApiClient().addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
-                    await Osume.updateAudioFeatures(currentSong, false);
-                    Osume.updateGenres(currentSong, true, false);
-                    songsPlayed.push(currentSong);
-                    previousSongsLiked.push(true);
+                    await Osume.makeSongChoice(currentSong, true);
                     await loadSong();
                 }
             }
@@ -137,9 +125,7 @@ namespace OsumeProject
                 {
                     playMP3.Interrupt();
                     playMP3 = null;
-                    Osume.updateGenres(currentSong, false, false);
-                    songsPlayed.push(currentSong);
-                    previousSongsLiked.push(true);
+                    await Osume.makeSongChoice(currentSong, false);
                     await loadSong();
                 }
             }
@@ -150,20 +136,18 @@ namespace OsumeProject
                 throw err;
             }
         }
-        private void toggleRecommendationStrength(object sender, RoutedEventArgs e)
+        private void toggleRecommendationStrengthClicked(object sender, RoutedEventArgs e)
         {
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
-            checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = Osume.databaseManager.returnSearchedTable(checkRecSettings);
-            int strength = Convert.ToInt32(result.Rows[0][0]);
-            SQLiteCommand changeRecStrengthSettings = new SQLiteCommand("UPDATE userSettings SET recommendationStrength = @strength WHERE username = @username", Osume.databaseManager.connection);
+            int strength = Osume.getRecommendationStrength();
+            SQLiteCommand changeRecStrengthSettings = new SQLiteCommand("UPDATE userSettings SET recommendationStrength = @strength WHERE username = @username", Osume.getDatabaseManager().connection);
             changeRecStrengthSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
             if (strength == 0)
             {
                 changeRecStrengthSettings.Parameters.AddWithValue("@strength", 1);
                 ChangeRecButton.Content = "Normal Recommendations";
                 ChangeRecButton.Template = (ControlTemplate)this.Resources["purpleButton"];
-            } else
+            }
+            else
             {
                 changeRecStrengthSettings.Parameters.AddWithValue("@strength", 0);
                 ChangeRecButton.Content = "Expanding Taste";
@@ -178,10 +162,7 @@ namespace OsumeProject
         }
         private async void loadWindow()
         {
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", this.Osume.databaseManager.connection);
-            checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = Osume.databaseManager.returnSearchedTable(checkRecSettings);
-            int strength = Convert.ToInt32(result.Rows[0][0]);
+            int strength = Osume.getRecommendationStrength();
             if (strength == 0)
             {
                 ChangeRecButton.Content = "Expanding Taste";
@@ -199,12 +180,12 @@ namespace OsumeProject
         }
         private async Task loadSong(OsumeTrack songToPlay = null)
         {
-            Dictionary<string, double> recommendations = null;
-            Random rand = new Random();
             ImageBrush brush = new ImageBrush();
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
+            Dictionary<string, double> recommendations = null;
             bool validSong = false;
+            Random rand = new Random();
             int index = 14;
             if (songToPlay == null)
             {
@@ -212,59 +193,11 @@ namespace OsumeProject
             }
             do
             {
+                int random = rand.Next(0, index);
                 try
                 {
-                    OsumeTrack song = null;
-                    if (songToPlay == null)
-                    {
-                        if (songsToPlay.getLength() == 0)
-                        {
-                            song = await Osume.getApiClient().getTrack(recommendations.ElementAt(rand.Next(0, index)).Key);
-                        } else
-                        {
-                            song = songsToPlay.pop();
-                        }
-                        undone = false;
-                    }
-                    else
-                    {
-                        song = songToPlay;
-                        undone = true;
-                    }
-
-                    bool allowed = false;
-
-                    if (song.isExplicit)
-                    {
-                        SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
-                        checkExplicitSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
-                        DataTable table0 = Osume.databaseManager.returnSearchedTable(checkExplicitSetting);
-                        if (Convert.ToInt32(table0.Rows[0][0]) == 0)
-                        {
-                            allowed = false;
-                        }
-                        else allowed = true;
-                    } else
-                    {
-                        allowed = true;
-                    }
-                    SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", Osume.databaseManager.connection);
-                    searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
-                    if (song.artists.Length > 0)
-                    {
-                        searchBlockList.Parameters.AddWithValue("@artistID", song.artists[0].id);
-                    }
-                    else
-                    {
-                        searchBlockList.Parameters.AddWithValue("@artistID", "null");
-                    }
-                    DataTable table1 = Osume.databaseManager.returnSearchedTable(searchBlockList);
-                    SQLiteCommand searchSavedSong = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username AND songID = @songID", Osume.databaseManager.connection);
-                    searchSavedSong.Parameters.AddWithValue("@username", factory.getSingleton().username);
-                    searchSavedSong.Parameters.AddWithValue("@songID", song.id);
-                    DataTable table2 = Osume.databaseManager.returnSearchedTable(searchSavedSong);
-                    if (table1.Rows.Count == 0 && table2.Rows.Count == 0 && allowed == true)
-                    {
+                    OsumeTrack song = await Osume.getRecommendation(songToPlay, recommendations, random);
+                    if (song != null) { 
                         validSong = true;
                         if (song.album.coverImages[300] != null)
                         {
@@ -296,7 +229,7 @@ namespace OsumeProject
                     {
                         if (recommendations != null)
                         {
-                            recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
+                            recommendations.Remove(recommendations.ElementAt(random).Key);
                         }
                         index--;
                     }
@@ -306,7 +239,7 @@ namespace OsumeProject
                     Trace.WriteLine(err);
                     if (recommendations != null)
                     {
-                        recommendations.Remove(recommendations.ElementAt(rand.Next(0, index)).Key);
+                        recommendations.Remove(recommendations.ElementAt(random).Key);
                         index--;
                     }
                 }

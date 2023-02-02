@@ -61,23 +61,23 @@ namespace OsumeProject
             analyseText.Visibility = Visibility.Visible;
             OsumeTrack[] recentTopTracks = await Osume.getApiClient().getTopTracks("short_term", 50);
             OsumeArtist[] recentTopArtists = await Osume.getApiClient().getTopArtists("short_term", 50);
-            SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.databaseManager.connection);
+            SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.getDatabaseManager().connection);
             searchFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
             foreach (OsumeArtist artist in recentTopArtists)
             {
                 foreach (string genre in artist.genres)
                 {
-                    Osume.databaseManager.updateGenres(genre, true, false);
+                    Osume.getDatabaseManager().updateGenres(genre, true, false);
                 }
                 analyseProgressBar.Value = analyseProgressBar.Value + 1;
             }
             foreach (OsumeTrack track in recentTopTracks)
             {
-                DataTable data = Osume.databaseManager.returnSearchedTable(searchFeatures);
+                DataTable data = Osume.getDatabaseManager().returnSearchedTable(searchFeatures);
                 if (data.Rows.Count >= 0)
                 {
                     Dictionary<string, double> audioFeatures = await Osume.getApiClient().getAudioFeatures(track.id);
-                    Osume.databaseManager.updateAudioFeatures(track, data, false, audioFeatures);
+                    Osume.getDatabaseManager().updateAudioFeatures(track, data, false, audioFeatures);
                 }
                 analyseProgressBar.Value = analyseProgressBar.Value + 1;
             }
@@ -121,9 +121,9 @@ namespace OsumeProject
                 errorMessageBox.Text = "Error! Passwords do not match!";
                 return;
             }
-            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
+            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
             countCommand.Parameters.AddWithValue("@user", usernameInput.Text);
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
             command.Parameters.AddWithValue("@user", usernameInput.Text);
             try
             {
@@ -168,5 +168,7 @@ namespace OsumeProject
             homescreen.Show();
             this.Close();
         }
+
+
     }
 }

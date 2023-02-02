@@ -52,9 +52,9 @@ namespace OsumeProject
         private async void loginButtonClick(object sender, RoutedEventArgs e)
         {
             var username = usernameInput.Text;
-            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
+            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
             countCommand.Parameters.AddWithValue("@user", username);
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.databaseManager.connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
             command.Parameters.AddWithValue("@user", username);
             try
             {
@@ -76,7 +76,7 @@ namespace OsumeProject
                         else admin = true;
                     }
                     string hashedPassword = Osume.sha1(passwordInput.Password);
-                    DataTable data = Osume.databaseManager.returnSearchedTable(command);
+                    DataTable data = Osume.getDatabaseManager().returnSearchedTable(command);
                     bool validPassword = false;
                     if ((string)data.Rows[0][1] == hashedPassword)
                     {

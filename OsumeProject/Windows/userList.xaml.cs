@@ -50,13 +50,7 @@ namespace OsumeProject
         private void removeButtonClick(object sender, RoutedEventArgs e)
         {
             string name = ((Button)sender).Name[12].ToString();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", Osume.databaseManager.connection);
-            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = Osume.databaseManager.returnSearchedTable(command);
-            DataRow row = data.Rows[Convert.ToInt32(name)];
-            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM userAccount WHERE username = @username", Osume.databaseManager.connection);
-            removeSong.Parameters.AddWithValue("@username", row[0]);
-            removeSong.ExecuteNonQuery();
+            Osume.removeUserAccount(name);
             loadUserList();
         }
 
@@ -65,9 +59,7 @@ namespace OsumeProject
             ImageBrush brush = new ImageBrush();
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             usersList.Children.Clear();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", Osume.databaseManager.connection);
-            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = Osume.databaseManager.returnSearchedTable(command);
+            DataTable data = Osume.getAllUserAccounts();
             int rectangleTopMargin = 0;
             int number = 0;
             foreach (DataRow row in data.Rows)

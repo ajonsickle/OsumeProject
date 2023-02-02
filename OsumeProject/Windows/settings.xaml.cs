@@ -53,12 +53,10 @@ namespace OsumeProject
         }
         private void explicitTracksToggleClicked(object sender, RoutedEventArgs e)
         {
-            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
-            checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = Osume.databaseManager.returnSearchedTable(checkExplicit);
-            SQLiteCommand changeSetting = new SQLiteCommand("UPDATE userSettings SET explicitTracks = @toggle WHERE username = @username", Osume.databaseManager.connection);
+            int result = Osume.getExplicitTracks();
+            SQLiteCommand changeSetting = new SQLiteCommand("UPDATE userSettings SET explicitTracks = @toggle WHERE username = @username", Osume.getDatabaseManager().connection);
             changeSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            if (Convert.ToInt32(result.Rows[0][0]) == 1)
+            if (result == 1)
             {
                 changeSetting.Parameters.AddWithValue("@toggle", 0);
                 explicitTracksToggle.Content = "Explicit Tracks Off";
@@ -73,19 +71,15 @@ namespace OsumeProject
         {
             if (factory.getSingleton().admin == true) viewUsersAdmin.Visibility = Visibility.Visible;
             else viewUsersAdmin.Visibility = Visibility.Hidden;
-            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", Osume.databaseManager.connection);
-            checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable result = Osume.databaseManager.returnSearchedTable(checkExplicit);
-            if (Convert.ToInt32(result.Rows[0][0]) == 0) {
+            int result = Osume.getExplicitTracks();
+            if (result == 0) {
                 explicitTracksToggle.Content = "Explicit Tracks Off";
             }
             ImageBrush brush = new ImageBrush();
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
             blockedArtists.Children.Clear();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", Osume.databaseManager.connection);
-            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = Osume.databaseManager.returnSearchedTable(command);
+            DataTable data = Osume.getBlockedArtists();
             int rectangleTopMargin = 10;
             int number = 0;
             foreach (DataRow row in data.Rows)
@@ -150,13 +144,7 @@ namespace OsumeProject
         private void removeButtonClick(object sender, RoutedEventArgs e)
         {
             string name = ((Button)sender).Name[12].ToString();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", Osume.databaseManager.connection);
-            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = Osume.databaseManager.returnSearchedTable(command);
-            DataRow row = data.Rows[Convert.ToInt32(name)];
-            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockList WHERE artistID = @id", Osume.databaseManager.connection);
-            removeArtist.Parameters.AddWithValue("@id", row[0]);
-            removeArtist.ExecuteNonQuery();
+            Osume.removeFromBlockedArtists(name);
             loadSettings();
         }
         private void ellipse_MouseUp(object sender, MouseButtonEventArgs e)
@@ -172,11 +160,7 @@ namespace OsumeProject
         {
             OsumeArtist artist = await Osume.getApiClient().getArtistByName(blockArtistText.Text);
             if (artist == null) return;
-            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockList (artistID, timeSaved, username) VALUES (?, ?, ?)", Osume.databaseManager.connection);
-            comm.Parameters.AddWithValue("@artistID", artist.id);
-            comm.Parameters.AddWithValue("@timeSaved", DateTime.Now);
-            comm.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            comm.ExecuteNonQuery();
+            Osume.addToBlockedArtists(artist);
             loadSettings();
         }
         private void homeButtonClick(object sender, RoutedEventArgs e)

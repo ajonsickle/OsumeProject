@@ -10,22 +10,33 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Windows.Media.Imaging;
+using System.Xml.Linq;
 
 namespace OsumeProject
 {
     public class Osume
     {
         private apiClient apiClient;
-        public databaseManager databaseManager;
+        private databaseManager databaseManager;
+        public OStack<OsumeTrack> songsPlayed;
+        public OStack<OsumeTrack> songsToPlay;
+        public OStack<bool> previousSongsLiked;
         public Osume(apiClient apiClient, databaseManager databaseManager)
         {
             this.apiClient = apiClient;
             this.databaseManager = databaseManager;
+            this.songsPlayed = new OStack<OsumeTrack>();
+            this.songsToPlay = new OStack<OsumeTrack>();
+            this.previousSongsLiked = new OStack<bool>();
         }
         public apiClient getApiClient()
         {
@@ -360,6 +371,158 @@ namespace OsumeProject
             insertUserSettingsRow.Parameters.AddWithValue("username", usernameInput);
             insertUserSettingsRow.ExecuteNonQuery();
         }
+        public async Task makeSongChoice(OsumeTrack currentSong, bool like)
+        {
+            if (like)
+            {
+                SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().connection);
+                command.Parameters.AddWithValue("songID", currentSong.id);
+                command.Parameters.AddWithValue("timeSaved", DateTime.Now);
+                command.Parameters.AddWithValue("username", factory.getSingleton().username);
+                command.ExecuteNonQuery();
+                getApiClient().addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
+                await updateAudioFeatures(currentSong, false);
+            }
+            updateGenres(currentSong, like, false);
+            songsPlayed.push(currentSong);
+            previousSongsLiked.push(true);
+        }
+        public int getRecommendationStrength()
+        {
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", getDatabaseManager().connection);
+            checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable result = getDatabaseManager().returnSearchedTable(checkRecSettings);
+            int strength = Convert.ToInt32(result.Rows[0][0]);
+            return strength;
+        }
+        public async Task<OsumeTrack> getRecommendation(OsumeTrack songToPlay, Dictionary<string, double> recommendations, int random)
+        {
+            try
+            {
+                OsumeTrack song = null;
+                if (songToPlay == null)
+                {
+                    if (songsToPlay.getLength() == 0)
+                    {
+                        song = await getApiClient().getTrack(recommendations.ElementAt(random).Key);
+                    }
+                    else
+                    {
+                        song = songsToPlay.pop();
+                    }
+                }
+                else
+                {
+                    song = songToPlay;
+                }
 
+                bool allowed = false;
+
+                if (song.isExplicit)
+                {
+                    SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", getDatabaseManager().connection);
+                    checkExplicitSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
+                    DataTable table0 = getDatabaseManager().returnSearchedTable(checkExplicitSetting);
+                    if (Convert.ToInt32(table0.Rows[0][0]) == 0)
+                    {
+                        allowed = false;
+                    }
+                    else allowed = true;
+                }
+                else
+                {
+                    allowed = true;
+                }
+                SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", getDatabaseManager().connection);
+                searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
+                if (song.artists.Length > 0)
+                {
+                    searchBlockList.Parameters.AddWithValue("@artistID", song.artists[0].id);
+                }
+                else
+                {
+                    searchBlockList.Parameters.AddWithValue("@artistID", "null");
+                }
+                DataTable table1 = getDatabaseManager().returnSearchedTable(searchBlockList);
+                SQLiteCommand searchSavedSong = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username AND songID = @songID", getDatabaseManager().connection);
+                searchSavedSong.Parameters.AddWithValue("@username", factory.getSingleton().username);
+                searchSavedSong.Parameters.AddWithValue("@songID", song.id);
+                DataTable table2 = getDatabaseManager().returnSearchedTable(searchSavedSong);
+                if (table1.Rows.Count == 0 && table2.Rows.Count == 0 && allowed == true)
+                {
+                    return song;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception err)
+            {
+                Trace.WriteLine(err);
+                return null;
+            }
+        }
+        public DataTable getSavedSongs()
+        {
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().connection);
+            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable data = getDatabaseManager().returnSearchedTable(command);
+            return data;
+        }
+        public void removeFromLibrary(string name)
+        {
+            DataTable data = getSavedSongs();
+            DataRow row = data.Rows[Convert.ToInt32(name)];
+            getApiClient().removeFromPlaylist(factory.getSingleton().playlistID, new string[] { row[0].ToString() });
+            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @id", getDatabaseManager().connection);
+            removeSong.Parameters.AddWithValue("@id", row[0]);
+            removeSong.ExecuteNonQuery();
+        }
+        public DataTable getBlockedArtists()
+        {
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().connection);
+            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable data = getDatabaseManager().returnSearchedTable(command);
+            return data;
+        }
+        public void addToBlockedArtists(OsumeArtist artist)
+        {
+            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockList (artistID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().connection);
+            comm.Parameters.AddWithValue("@artistID", artist.id);
+            comm.Parameters.AddWithValue("@timeSaved", DateTime.Now);
+            comm.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            comm.ExecuteNonQuery();
+        }
+        public void removeFromBlockedArtists(string name)
+        {
+            DataTable data = getBlockedArtists();
+            DataRow row = data.Rows[Convert.ToInt32(name)];
+            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockList WHERE artistID = @id", getDatabaseManager().connection);
+            removeArtist.Parameters.AddWithValue("@id", row[0]);
+            removeArtist.ExecuteNonQuery();
+        }
+        public int getExplicitTracks()
+        {
+            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", getDatabaseManager().connection);
+            checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable result = getDatabaseManager().returnSearchedTable(checkExplicit);
+            return Convert.ToInt32(result.Rows[0][0]);
+        }
+        public DataTable getAllUserAccounts()
+        {
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", getDatabaseManager().connection);
+            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
+            DataTable data = getDatabaseManager().returnSearchedTable(command);
+            return data;
+        }
+        public void removeUserAccount(string name)
+        {
+            DataTable data = getAllUserAccounts();
+            DataRow row = data.Rows[Convert.ToInt32(name)];
+            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM userAccount WHERE username = @username", getDatabaseManager().connection);
+            removeSong.Parameters.AddWithValue("@username", row[0]);
+            removeSong.ExecuteNonQuery();
+        }
     }
 }

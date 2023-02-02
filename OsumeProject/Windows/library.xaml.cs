@@ -47,9 +47,7 @@ namespace OsumeProject
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
             songsList.Children.Clear();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username ORDER BY timeSaved DESC", Osume.databaseManager.connection);
-            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = Osume.databaseManager.returnSearchedTable(command);
+            DataTable data = Osume.getSavedSongs();
             int rectangleTopMargin = 0;
             int number = 0;
             foreach (DataRow row in data.Rows)
@@ -124,14 +122,7 @@ namespace OsumeProject
         private void removeButtonClick(object sender, RoutedEventArgs e)
         {
             string name = ((Button)sender).Name[12].ToString();
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username ORDER BY timeSaved DESC", Osume.databaseManager.connection);
-            command.Parameters.AddWithValue("@username", factory.getSingleton().username);
-            DataTable data = Osume.databaseManager.returnSearchedTable(command);
-            DataRow row = data.Rows[Convert.ToInt32(name)];
-            Osume.getApiClient().removeFromPlaylist(factory.getSingleton().playlistID, new string[] { row[0].ToString() });
-            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @id", Osume.databaseManager.connection);
-            removeSong.Parameters.AddWithValue("@id", row[0]);
-            removeSong.ExecuteNonQuery();
+            Osume.removeFromLibrary(name);
             loadLibrary();
         }
         private void homeButtonClick(object sender, RoutedEventArgs e)
