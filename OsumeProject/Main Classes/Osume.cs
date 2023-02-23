@@ -2,6 +2,7 @@
 using NAudio.Wave;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -10,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Printing.IndexedProperties;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
@@ -281,18 +283,76 @@ namespace OsumeProject
             int[] arr = { avgRed, avgBlue, avgGreen };
             return arr;
         }
-        public string sha1(string input)
+        public string md5(string input)
         {
-            string output = "";
-            byte[] inputBytes = Encoding.ASCII.GetBytes(input);
-            SHA1 hasher = SHA1.Create();
-            byte[] computedHash = hasher.ComputeHash(inputBytes);
-            foreach (var hashedByte in computedHash)
+            if (input.Length > 50) return null;
+            byte[] inputs = Encoding.ASCII.GetBytes(input);
+            int i;
+            uint[] K = new uint[64];
+            int[] s = new int[64]
             {
-                output += hashedByte.ToString("X2");
+                7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+                5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+                4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+                6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
+            };
+            for (int j = 0; j < 64; j++)
+            {
+                K[j] = Convert.ToUInt32(Math.Floor(Math.Pow(2, 32) * Math.Abs(Math.Sin(j + 1))));
             }
-            if (string.IsNullOrEmpty(output)) return "Error!";
-            else return output;
+            uint a0 = 0x67452301;
+            uint b0 = 0xefcdab89;
+            uint c0 = 0x98badcfe;
+            uint d0 = 0x10325476;
+            var processedInputBuilder = new List<byte>(inputs) { 0x80 };
+            while (processedInputBuilder.Count % 64 != 56) processedInputBuilder.Add(0x0);
+            processedInputBuilder.AddRange(BitConverter.GetBytes((long)inputs.Length * 8)); 
+            var final = processedInputBuilder.ToArray();
+
+            for (int k = 0; k < final.Length / 64; k++)
+            {
+                uint[] M = new uint[16];
+                for (int l = 0; l < 16; l++)
+                {
+                    M[l] = BitConverter.ToUInt32(final, (k * 64) + (l * 4));
+                }
+                uint A = a0;
+                uint B = b0;
+                uint C = c0;
+                uint D = d0;
+                for (uint m = 0; m < 64; m++)
+                {
+                    uint F = 0;
+                    uint g = 0;
+                    if (m >= 0 && m <= 15) {
+                        F = (B * C) | ((~B) & D);
+                        g = m;
+                    } else if (m >= 16 && m <= 31)
+                    {
+                        F = (D & B) | ((~D) & C);
+                        g = ((5 * m) + 1) % 16;
+                    } else if (m >= 32 && m <= 47)
+                    {
+                        F = B ^ C ^ D;
+                        g = (3 * m + 5) % 16;
+                    } else if (m >= 48 && m <= 63)
+                    {
+                        F = C ^ (B | (~D));
+                        g = (7 * m) % 16;
+                    }
+                    F = F + A + K[m] + M[g];
+                    A = D;
+                    D = C;
+                    C = B;
+                    B = B + ((A + F + K[m] + M[g] << s[m]) | (A + F + K[m] + M[g] >> (32 - s[m])));
+                }
+                a0 = a0 + A;
+                b0 = b0 + B;
+                c0 = c0 + C;
+                d0 = d0 + D;
+            }
+            return String.Join("", BitConverter.GetBytes(a0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(b0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(c0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(d0).Select(y => y.ToString("x2")));
+
         }
         public async Task register(bool admin, string usernameInput, string hashedPassword)
         {

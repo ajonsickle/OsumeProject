@@ -135,7 +135,7 @@ namespace OsumeProject
                 }
                 else
                 {
-                    string hashedPassword = Osume.sha1(passwordInput.Password);
+                    string hashedPassword = Osume.md5(passwordInput.Password);
                     if (hashedPassword == "Error!")
                     {
                         errorMessageBox.Text = "Error while storing password!";

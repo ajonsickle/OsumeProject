@@ -63,7 +63,8 @@ namespace OsumeProject
                 {
                     errorMessageBox.Text = "Username does not exist!";
                     return;
-                } else
+                }
+                else
                 {
                     bool admin = false;
                     if (adminCheckbox.IsChecked == true)
@@ -75,33 +76,39 @@ namespace OsumeProject
                         }
                         else admin = true;
                     }
-                    string hashedPassword = Osume.sha1(passwordInput.Password);
+                    string hashedPassword = Osume.md5(passwordInput.Password);
                     DataTable data = Osume.getDatabaseManager().returnSearchedTable(command);
                     bool validPassword = false;
-                    if ((string)data.Rows[0][1] == hashedPassword)
+                    if (hashedPassword != null)
                     {
-                        validPassword = true;
-                    }
-                    if (validPassword)
-                    {
-                        if (admin == true)
+                        if ((string)data.Rows[0][1] == hashedPassword)
                         {
-                            factory.createSingleton(true);
+                            validPassword = true;
                         }
-                        else factory.createSingleton(false);
-                        factory.getSingleton().accessToken = (string)data.Rows[0][2];
-                        factory.getSingleton().username = username;
-                        await Osume.getApiClient().getRefreshToken();
-                        string userID = await Osume.getApiClient().getCurrentUserID();
-                        string pfpURL = await Osume.getApiClient().getCurrentUserPFP();
-                        factory.getSingleton().pfpURL = pfpURL;
-                        factory.getSingleton().userID = userID;
-                        factory.getSingleton().playlistID = (string)data.Rows[0][3];
-                        await Osume.getApiClient().getRefreshToken();
-                    } else
-                    {
-                        errorMessageBox.Text = "Incorrect password!";
-                        return;
+                        {
+                        }
+                        if (validPassword)
+                        {
+                            if (admin == true)
+                            {
+                                factory.createSingleton(true);
+                            }
+                            else factory.createSingleton(false);
+                            factory.getSingleton().accessToken = (string)data.Rows[0][2];
+                            factory.getSingleton().username = username;
+                            await Osume.getApiClient().getRefreshToken();
+                            string userID = await Osume.getApiClient().getCurrentUserID();
+                            string pfpURL = await Osume.getApiClient().getCurrentUserPFP();
+                            factory.getSingleton().pfpURL = pfpURL;
+                            factory.getSingleton().userID = userID;
+                            factory.getSingleton().playlistID = (string)data.Rows[0][3];
+                            await Osume.getApiClient().getRefreshToken();
+                        }
+                        else
+                        {
+                            errorMessageBox.Text = "Incorrect password!";
+                            return;
+                        }
                     }
                 }
             } catch (Exception err)
