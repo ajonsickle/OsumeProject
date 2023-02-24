@@ -20,54 +20,54 @@ namespace OsumeProject
             length = elements.Length;
         }
 
-        public OList<T> sort(OList<T> list, bool ascending)
+        public void sort(ref OList<T> list, int left, int right, bool ascending)
+        {
+            if (left < right)
+            {
+                int num = split(ref list, left, right, ascending);
+                sort(ref list, left, num - 1, ascending);
+                sort(ref list, num + 1, right, ascending);
+            }
+        }
+
+        static private int split(ref OList<T> list, int left, int right, bool ascending)
         {
             T[] array = list.convertToArray();
-            int mid = array.Length / 2;
-            T[] left = new T[mid];
-            T[] right = new T[array.Length - mid];
-            if (array.Length <= 1) return new OList<T>(array);
-            Array.Copy(array, left, mid);
-            Array.Reverse(array);
-            Array.Copy(array, right, array.Length - mid);
-            Array.Reverse(array);
-            left = sort(new OList<T>(left), ascending).convertToArray();
-            right = sort(new OList<T>(right), ascending).convertToArray();
-            T[] combined = new T[left.Length + right.Length];
-            int indexL = 0;
-            int indexR = 0;
-            int indexF = 0;
-            while (indexL < left.Length || indexR < right.Length)
-            {
-                if (indexL < left.Length && indexR < right.Length)
-                {
-                    if ((ascending) ? left[indexL].CompareTo(right[indexR]) <= 0 : left[indexL].CompareTo(right[indexR]) >= 0)
-                    {
-                        combined[indexF] = left[indexL];
-                        indexL++;
-                        indexF++;
-                    } else
-                    {
-                        combined[indexF] = right[indexR];
-                        indexR++;
-                        indexF++;
-                    }
+            T pivot;
+            pivot = array[right];
+            T temp;
+            int j = left;
 
-                } else if (indexL < left.Length)
+            if (ascending)
+            {
+                for (int i = left; i < right; i++)
                 {
-                    combined[indexF] = left[indexL];
-                    indexL++;
-                    indexF++;
-                } else if (indexR < right.Length)
+                    if (array[i].CompareTo(pivot) <= 0)
+                    {
+                        temp = array[i];
+                        array[i] = array[j];
+                        array[j] = temp;
+                        j++;
+                    }
+                }
+            } else
+            {
+                for (int i = right; i > left; i--)
                 {
-                    combined[indexF] = right[indexR];
-                    indexR++;
-                    indexF++;
+                    if (array[i].CompareTo(pivot) >= 0)
+                    {
+                        temp = array[i];
+                        array[i] = array[j];
+                        array[j] = temp;
+                        j++;
+                    }
                 }
             }
-            return new OList<T>(combined);
-
+            array[right] = array[j];
+            array[j] = pivot;
+            return j;
         }
+
         public int getLength()
         {
             return this.length;

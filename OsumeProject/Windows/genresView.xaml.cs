@@ -32,7 +32,6 @@ namespace OsumeProject.Windows
             }
             sr.Close();
             loadList();
-
         }
         private void backButtonClick(object sender, RoutedEventArgs e)
         {
@@ -43,7 +42,7 @@ namespace OsumeProject.Windows
         private void toggleSort(object sender, RoutedEventArgs e)
         {
             ascending = ascending == true ? false : true;
-            genres = genres.sort(genres, ascending);
+            genres.sort(ref genres, 0, genres.getLength() - 1, ascending);
             loadList();
         }
         private void loadList()
