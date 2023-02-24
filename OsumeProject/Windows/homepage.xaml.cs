@@ -157,7 +157,7 @@ namespace OsumeProject
         }
         private void setThread(string playbackURL)
         {
-            playMP3 = new Thread(() => Osume.PlayMp3FromUrl(playbackURL));
+            playMP3 = new Thread(() => Osume.playMP3FromUrl(playbackURL));
             playMP3.IsBackground = true;
         }
         private async void loadWindow()

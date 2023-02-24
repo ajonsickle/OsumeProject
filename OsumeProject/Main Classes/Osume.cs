@@ -228,7 +228,7 @@ namespace OsumeProject
             }
 
         }
-        public void PlayMp3FromUrl(string url)
+        public void playMP3FromUrl(string url)
         {
             using (var client = new WebClient())
             {
