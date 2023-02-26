@@ -52,7 +52,7 @@ namespace OsumeProject
                 }
             } else
             {
-                for (int i = right; i > left; i--)
+                for (int i = left; i < right; i++)
                 {
                     if (array[i].CompareTo(pivot) >= 0)
                     {
@@ -65,7 +65,7 @@ namespace OsumeProject
             }
             array[right] = array[j];
             array[j] = pivot;
-            return j;
+            return j; 
         }
 
         public int getLength()

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OsumeProject
 {
-    class TokenResponseTemp
+    public class TokenResponseTemp
     {
         public string access_token { get; set; }
         public string token_type { get; set; }

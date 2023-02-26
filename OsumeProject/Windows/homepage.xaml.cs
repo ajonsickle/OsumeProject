@@ -139,7 +139,7 @@ namespace OsumeProject
         private void toggleRecommendationStrengthClicked(object sender, RoutedEventArgs e)
         {
             int strength = Osume.getRecommendationStrength();
-            SQLiteCommand changeRecStrengthSettings = new SQLiteCommand("UPDATE userSettings SET recommendationStrength = @strength WHERE username = @username", Osume.getDatabaseManager().connection);
+            SQLiteCommand changeRecStrengthSettings = new SQLiteCommand("UPDATE userSettings SET recommendationStrength = @strength WHERE username = @username", Osume.getDatabaseManager().getConnection());
             changeRecStrengthSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
             if (strength == 0)
             {

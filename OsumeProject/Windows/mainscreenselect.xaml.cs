@@ -26,10 +26,10 @@ namespace OsumeProject
         {
             Osume = new Osume(new apiClient("5ee7e89013d64c0aad8d6c2fd98213b3", "8c3dff68705f421894419de174db4b10", new HttpClient()), new databaseManager(new SQLiteConnection("Data Source=database.db")));
             InitializeComponent();
-            if (Osume.getDatabaseManager().open == false)
+            if (Osume.getDatabaseManager().getOpen() == false)
             {
-                Osume.getDatabaseManager().connection.Open();
-                Osume.getDatabaseManager().open = true;
+                Osume.getDatabaseManager().getConnection().Open();
+                Osume.getDatabaseManager().setOpen(true);
             }
             
         }

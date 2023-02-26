@@ -52,9 +52,9 @@ namespace OsumeProject
         private async void loginButtonClick(object sender, RoutedEventArgs e)
         {
             var username = usernameInput.Text;
-            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
+            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.getDatabaseManager().getConnection());
             countCommand.Parameters.AddWithValue("@user", username);
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.getDatabaseManager().getConnection());
             command.Parameters.AddWithValue("@user", username);
             try
             {
@@ -102,7 +102,6 @@ namespace OsumeProject
                             factory.getSingleton().pfpURL = pfpURL;
                             factory.getSingleton().userID = userID;
                             factory.getSingleton().playlistID = (string)data.Rows[0][3];
-                            await Osume.getApiClient().getRefreshToken();
                         }
                         else
                         {

@@ -22,13 +22,33 @@ namespace OsumeProject
 {
     public class databaseManager
     {
-        public SQLiteConnection connection;
-        public bool open;
+        private SQLiteConnection connection;
+        private bool open;
 
         public databaseManager(SQLiteConnection connection)
         {
             this.connection = connection;
             open = false;
+        }
+
+        public SQLiteConnection getConnection()
+        {
+            return this.connection;
+        }
+
+        public void setConnection(SQLiteConnection connection)
+        {
+            this.connection = connection;
+        }
+
+        public bool getOpen()
+        {
+            return this.open;
+        }
+
+        public void setOpen(bool open)
+        {
+            this.open = open;
         }
 
         public DataTable returnSearchedTable(SQLiteCommand command)

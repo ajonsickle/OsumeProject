@@ -51,7 +51,7 @@ namespace OsumeProject
         public double[] getAudioFeatureTasteVector()
         {
             OList<double> vector = new OList<double>();
-            SQLiteCommand getAudioFeaturesForUser = new SQLiteCommand("SELECT (danceabilityTotal / count), (energyTotal / count), (speechinessTotal / count), (acousticnessTotal / count), (instrumentalnessTotal / count), (livenessTotal / count), (valenceTotal / count) FROM audioFeature WHERE username = @username", databaseManager.connection);
+            SQLiteCommand getAudioFeaturesForUser = new SQLiteCommand("SELECT (danceabilityTotal / count), (energyTotal / count), (speechinessTotal / count), (acousticnessTotal / count), (instrumentalnessTotal / count), (livenessTotal / count), (valenceTotal / count) FROM audioFeature WHERE username = @username", databaseManager.getConnection());
             getAudioFeaturesForUser.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable result = databaseManager.returnSearchedTable(getAudioFeaturesForUser);
             for (int i = 0; i < 7; i++)
@@ -64,7 +64,7 @@ namespace OsumeProject
         {
             OList<double> vector = new OList<double>();
             StreamReader sr = new StreamReader("genresList.txt");
-            SQLiteCommand getAllGenresForUser = new SQLiteCommand("SELECT genreName, (numOfLikedSongs / numOfDislikedSongs) FROM genre WHERE username = @username", databaseManager.connection);
+            SQLiteCommand getAllGenresForUser = new SQLiteCommand("SELECT genreName, (numOfLikedSongs / numOfDislikedSongs) FROM genre WHERE username = @username", databaseManager.getConnection());
             getAllGenresForUser.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable result = databaseManager.returnSearchedTable(getAllGenresForUser);
             while (sr.Peek() != -1)
@@ -152,7 +152,7 @@ namespace OsumeProject
                     i++;
                 }
             }
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", databaseManager.connection);
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", databaseManager.getConnection());
             checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable result = databaseManager.returnSearchedTable(checkRecSettings);
             int strength = Convert.ToInt32(result.Rows[0][0]);
@@ -169,7 +169,7 @@ namespace OsumeProject
         }
         public async Task updateAudioFeatures(OsumeTrack track, bool undo)
         {
-            SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+            SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.getConnection());
             getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
             DataTable data = databaseManager.returnSearchedTable(getCurrentFeatures);
             Dictionary<string, double> audioFeatures = await getApiClient().getAudioFeatures(track.id);
@@ -206,7 +206,7 @@ namespace OsumeProject
             DataTable featureData = null;
             if (liked)
             {
-                SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.connection);
+                SQLiteCommand getCurrentFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", databaseManager.getConnection());
                 getCurrentFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
                 featureData = databaseManager.returnSearchedTable(getCurrentFeatures);
             }
@@ -220,7 +220,7 @@ namespace OsumeProject
                 // clicked like
                 updateGenres(track, true, true);
                 await updateAudioFeatures(track, true);
-                SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", databaseManager.connection);
+                SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", databaseManager.getConnection());
                 deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
                 deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
                 deleteFromLibrary.ExecuteNonQuery();
@@ -354,7 +354,8 @@ namespace OsumeProject
             return String.Join("", BitConverter.GetBytes(a0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(b0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(c0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(d0).Select(y => y.ToString("x2")));
 
         }
-        public async Task register(bool admin, string usernameInput, string hashedPassword)
+
+        public async Task<HttpResponseMessage> getSpotifyOAuthResponseToken()
         {
             HttpListener listener = new HttpListener();
             listener.Prefixes.Add("http://localhost:8888/callback/");
@@ -386,10 +387,16 @@ namespace OsumeProject
                             {"code", accessToken},
                             {"redirect_uri", "http://localhost:8888/callback"}
                         });
-            if (admin == true) factory.createSingleton(true);
-            else factory.createSingleton(false);
             getAccessToken.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(getApiClient().clientID + ":" + getApiClient().clientSecret)));
             var token = await getApiClient().client.SendAsync(getAccessToken);
+            return token;
+        }
+
+        public async Task register(bool admin, string usernameInput, string hashedPassword)
+        {
+            var token = await getSpotifyOAuthResponseToken();
+            if (admin == true) factory.createSingleton(true);
+            else factory.createSingleton(false);
             if (!token.IsSuccessStatusCode)
             {
                 factory.deleteSingleton();
@@ -407,14 +414,19 @@ namespace OsumeProject
             factory.getSingleton().userID = userID;
             string playlistID = await getApiClient().createPlaylist(userID);
             factory.getSingleton().playlistID = playlistID;
-            SQLiteCommand insertUserAccountRow = new SQLiteCommand("INSERT INTO userAccount (username, hashedPassword, accessToken, playlistID, spotifyID) VALUES (?, ?, ?, ?, ?)", databaseManager.connection);
+            addNewUserToDB(usernameInput, hashedPassword, result, playlistID, userID);
+        }
+
+        public void addNewUserToDB(string usernameInput, string hashedPassword, TokenResponseTemp result, string playlistID, string userID)
+        {
+            SQLiteCommand insertUserAccountRow = new SQLiteCommand("INSERT INTO userAccount (username, hashedPassword, accessToken, playlistID, spotifyID) VALUES (?, ?, ?, ?, ?)", databaseManager.getConnection());
             insertUserAccountRow.Parameters.AddWithValue("username", usernameInput);
             insertUserAccountRow.Parameters.AddWithValue("hashedPassword", hashedPassword);
             insertUserAccountRow.Parameters.AddWithValue("accessToken", result.refresh_token);
             insertUserAccountRow.Parameters.AddWithValue("playlistID", playlistID);
             insertUserAccountRow.Parameters.AddWithValue("spotifyID", userID);
             insertUserAccountRow.ExecuteNonQuery();
-            SQLiteCommand insertFeaturesRow = new SQLiteCommand("INSERT INTO audioFeature (username, count, danceabilityTotal, energyTotal, speechinessTotal, acousticnessTotal, instrumentalnessTotal, livenessTotal, valenceTotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", databaseManager.connection);
+            SQLiteCommand insertFeaturesRow = new SQLiteCommand("INSERT INTO audioFeature (username, count, danceabilityTotal, energyTotal, speechinessTotal, acousticnessTotal, instrumentalnessTotal, livenessTotal, valenceTotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", databaseManager.getConnection());
             insertFeaturesRow.Parameters.AddWithValue("username", usernameInput);
             insertFeaturesRow.Parameters.AddWithValue("count", 0);
             insertFeaturesRow.Parameters.AddWithValue("danceabilityTotal", 0);
@@ -425,17 +437,18 @@ namespace OsumeProject
             insertFeaturesRow.Parameters.AddWithValue("livenessTotal", 0);
             insertFeaturesRow.Parameters.AddWithValue("valenceTotal", 0);
             insertFeaturesRow.ExecuteNonQuery();
-            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (explicitTracks, recommendationStrength, username) VALUES (?, ?, ?)", databaseManager.connection);
+            SQLiteCommand insertUserSettingsRow = new SQLiteCommand("INSERT INTO userSettings (explicitTracks, recommendationStrength, username) VALUES (?, ?, ?)", databaseManager.getConnection());
             insertUserSettingsRow.Parameters.AddWithValue("explicitTracks", true);
             insertUserSettingsRow.Parameters.AddWithValue("recommendationStrength", 1);
             insertUserSettingsRow.Parameters.AddWithValue("username", usernameInput);
             insertUserSettingsRow.ExecuteNonQuery();
         }
+
         public async Task makeSongChoice(OsumeTrack currentSong, bool like)
         {
             if (like)
             {
-                SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().connection);
+                SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().getConnection());
                 command.Parameters.AddWithValue("songID", currentSong.id);
                 command.Parameters.AddWithValue("timeSaved", DateTime.Now);
                 command.Parameters.AddWithValue("username", factory.getSingleton().username);
@@ -449,7 +462,7 @@ namespace OsumeProject
         }
         public int getRecommendationStrength()
         {
-            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", getDatabaseManager().connection);
+            SQLiteCommand checkRecSettings = new SQLiteCommand("SELECT recommendationStrength FROM userSettings WHERE username = @username", getDatabaseManager().getConnection());
             checkRecSettings.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable result = getDatabaseManager().returnSearchedTable(checkRecSettings);
             int strength = Convert.ToInt32(result.Rows[0][0]);
@@ -480,7 +493,7 @@ namespace OsumeProject
 
                 if (song.isExplicit)
                 {
-                    SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", getDatabaseManager().connection);
+                    SQLiteCommand checkExplicitSetting = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", getDatabaseManager().getConnection());
                     checkExplicitSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
                     DataTable table0 = getDatabaseManager().returnSearchedTable(checkExplicitSetting);
                     if (Convert.ToInt32(table0.Rows[0][0]) == 0)
@@ -493,7 +506,7 @@ namespace OsumeProject
                 {
                     allowed = true;
                 }
-                SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", getDatabaseManager().connection);
+                SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", getDatabaseManager().getConnection());
                 searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
                 if (song.artists.Length > 0)
                 {
@@ -504,7 +517,7 @@ namespace OsumeProject
                     searchBlockList.Parameters.AddWithValue("@artistID", "null");
                 }
                 DataTable table1 = getDatabaseManager().returnSearchedTable(searchBlockList);
-                SQLiteCommand searchSavedSong = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username AND songID = @songID", getDatabaseManager().connection);
+                SQLiteCommand searchSavedSong = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username AND songID = @songID", getDatabaseManager().getConnection());
                 searchSavedSong.Parameters.AddWithValue("@username", factory.getSingleton().username);
                 searchSavedSong.Parameters.AddWithValue("@songID", song.id);
                 DataTable table2 = getDatabaseManager().returnSearchedTable(searchSavedSong);
@@ -525,7 +538,7 @@ namespace OsumeProject
         }
         public DataTable getSavedSongs()
         {
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM savedSong WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().getConnection());
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable data = getDatabaseManager().returnSearchedTable(command);
             return data;
@@ -535,20 +548,20 @@ namespace OsumeProject
             DataTable data = getSavedSongs();
             DataRow row = data.Rows[Convert.ToInt32(name)];
             getApiClient().removeFromPlaylist(factory.getSingleton().playlistID, new string[] { row[0].ToString() });
-            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @id", getDatabaseManager().connection);
+            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @id", getDatabaseManager().getConnection());
             removeSong.Parameters.AddWithValue("@id", row[0]);
             removeSong.ExecuteNonQuery();
         }
         public DataTable getBlockedArtists()
         {
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().getConnection());
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable data = getDatabaseManager().returnSearchedTable(command);
             return data;
         }
         public void addToBlockedArtists(OsumeArtist artist)
         {
-            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockList (artistID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().connection);
+            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockList (artistID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().getConnection());
             comm.Parameters.AddWithValue("@artistID", artist.id);
             comm.Parameters.AddWithValue("@timeSaved", DateTime.Now);
             comm.Parameters.AddWithValue("@username", factory.getSingleton().username);
@@ -558,20 +571,20 @@ namespace OsumeProject
         {
             DataTable data = getBlockedArtists();
             DataRow row = data.Rows[Convert.ToInt32(name)];
-            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockList WHERE artistID = @id", getDatabaseManager().connection);
+            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockList WHERE artistID = @id", getDatabaseManager().getConnection());
             removeArtist.Parameters.AddWithValue("@id", row[0]);
             removeArtist.ExecuteNonQuery();
         }
         public int getExplicitTracks()
         {
-            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", getDatabaseManager().connection);
+            SQLiteCommand checkExplicit = new SQLiteCommand("SELECT explicitTracks FROM userSettings WHERE username = @username", getDatabaseManager().getConnection());
             checkExplicit.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable result = getDatabaseManager().returnSearchedTable(checkExplicit);
             return Convert.ToInt32(result.Rows[0][0]);
         }
         public DataTable getAllUserAccounts()
         {
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", getDatabaseManager().connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE NOT (username = @username) ORDER BY username DESC", getDatabaseManager().getConnection());
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable data = getDatabaseManager().returnSearchedTable(command);
             return data;
@@ -580,7 +593,7 @@ namespace OsumeProject
         {
             DataTable data = getAllUserAccounts();
             DataRow row = data.Rows[Convert.ToInt32(name)];
-            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM userAccount WHERE username = @username", getDatabaseManager().connection);
+            SQLiteCommand removeSong = new SQLiteCommand("DELETE FROM userAccount WHERE username = @username", getDatabaseManager().getConnection());
             removeSong.Parameters.AddWithValue("@username", row[0]);
             removeSong.ExecuteNonQuery();
         }

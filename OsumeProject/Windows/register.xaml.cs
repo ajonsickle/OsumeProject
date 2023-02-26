@@ -61,7 +61,7 @@ namespace OsumeProject
             analyseText.Visibility = Visibility.Visible;
             OsumeTrack[] recentTopTracks = await Osume.getApiClient().getTopTracks("short_term", 50);
             OsumeArtist[] recentTopArtists = await Osume.getApiClient().getTopArtists("short_term", 50);
-            SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.getDatabaseManager().connection);
+            SQLiteCommand searchFeatures = new SQLiteCommand("SELECT * FROM audioFeature WHERE username = @user", Osume.getDatabaseManager().getConnection());
             searchFeatures.Parameters.AddWithValue("@user", factory.getSingleton().username);
             foreach (OsumeArtist artist in recentTopArtists)
             {
@@ -121,9 +121,9 @@ namespace OsumeProject
                 errorMessageBox.Text = "Error! Passwords do not match!";
                 return;
             }
-            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
+            SQLiteCommand countCommand = new SQLiteCommand("SELECT COUNT(hashedPassword) FROM userAccount WHERE username = @user", Osume.getDatabaseManager().getConnection());
             countCommand.Parameters.AddWithValue("@user", usernameInput.Text);
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.getDatabaseManager().connection);
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM userAccount WHERE username = @user", Osume.getDatabaseManager().getConnection());
             command.Parameters.AddWithValue("@user", usernameInput.Text);
             try
             {

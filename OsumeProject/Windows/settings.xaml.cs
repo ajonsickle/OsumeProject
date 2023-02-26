@@ -54,7 +54,7 @@ namespace OsumeProject
         private void explicitTracksToggleClicked(object sender, RoutedEventArgs e)
         {
             int result = Osume.getExplicitTracks();
-            SQLiteCommand changeSetting = new SQLiteCommand("UPDATE userSettings SET explicitTracks = @toggle WHERE username = @username", Osume.getDatabaseManager().connection);
+            SQLiteCommand changeSetting = new SQLiteCommand("UPDATE userSettings SET explicitTracks = @toggle WHERE username = @username", Osume.getDatabaseManager().getConnection());
             changeSetting.Parameters.AddWithValue("@username", factory.getSingleton().username);
             if (result == 1)
             {
