@@ -283,6 +283,7 @@ namespace OsumeProject
             int[] arr = { avgRed, avgBlue, avgGreen };
             return arr;
         }
+
         public string md5(string input)
         {
             if (input.Length > 50) return null;
@@ -353,7 +354,7 @@ namespace OsumeProject
             }
             return String.Join("", BitConverter.GetBytes(a0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(b0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(c0).Select(y => y.ToString("x2"))) + String.Join("", BitConverter.GetBytes(d0).Select(y => y.ToString("x2")));
 
-        }
+        } 
 
         public async Task<HttpResponseMessage> getSpotifyOAuthResponseToken()
         {
