@@ -42,7 +42,7 @@ namespace OsumeProject.Windows
         private void toggleSort(object sender, RoutedEventArgs e)
         {
             ascending = ascending == true ? false : true;
-            genres.sort(ref genres, 0, genres.getLength() - 1, ascending);
+            genres.quicksort(ref genres, 0, genres.getLength() - 1, ascending);
             loadList();
         }
         private void loadList()

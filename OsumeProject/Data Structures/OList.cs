@@ -20,21 +20,20 @@ namespace OsumeProject
             length = elements.Length;
         }
 
-        public void sort(ref OList<T> list, int left, int right, bool ascending)
+        public void quicksort(ref OList<T> list, int left, int right, bool ascending)
         {
             if (left < right)
             {
                 int num = split(ref list, left, right, ascending);
-                sort(ref list, left, num - 1, ascending);
-                sort(ref list, num + 1, right, ascending);
+                quicksort(ref list, left, num - 1, ascending);
+                quicksort(ref list, num + 1, right, ascending);
             }
         }
 
         static private int split(ref OList<T> list, int left, int right, bool ascending)
         {
             T[] array = list.convertToArray();
-            T pivot;
-            pivot = array[right];
+            T pivot = array[right];
             T temp;
             int j = left;
 

@@ -288,7 +288,6 @@ namespace OsumeProject
         {
             if (input.Length > 50) return null;
             byte[] inputs = Encoding.ASCII.GetBytes(input);
-            int i;
             uint[] K = new uint[64];
             int[] s = new int[64]
             {
@@ -305,10 +304,11 @@ namespace OsumeProject
             uint b0 = 0xefcdab89;
             uint c0 = 0x98badcfe;
             uint d0 = 0x10325476;
-            var processedInputBuilder = new List<byte>(inputs) { 0x80 };
-            while (processedInputBuilder.Count % 64 != 56) processedInputBuilder.Add(0x0);
-            processedInputBuilder.AddRange(BitConverter.GetBytes((long)inputs.Length * 8)); 
-            var final = processedInputBuilder.ToArray();
+            var toAdd = new List<byte>(inputs);
+            toAdd.Add(0x80);
+            while (toAdd.Count % 64 != 56) toAdd.Add(0x0);
+            toAdd.AddRange(BitConverter.GetBytes((long)inputs.Length * 8)); 
+            var final = toAdd.ToArray();
 
             for (int k = 0; k < final.Length / 64; k++)
             {
@@ -326,7 +326,7 @@ namespace OsumeProject
                     uint F = 0;
                     uint g = 0;
                     if (m >= 0 && m <= 15) {
-                        F = (B * C) | ((~B) & D);
+                        F = (B & C) | ((~B) & D);
                         g = m;
                     } else if (m >= 16 && m <= 31)
                     {
@@ -345,7 +345,7 @@ namespace OsumeProject
                     A = D;
                     D = C;
                     C = B;
-                    B = B + ((A + F + K[m] + M[g] << s[m]) | (A + F + K[m] + M[g] >> (32 - s[m])));
+                    B = B + ((F << s[m]) | (F >> (32 - s[m])));
                 }
                 a0 = a0 + A;
                 b0 = b0 + B;

@@ -30,7 +30,7 @@ namespace OsumeProject
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class homepage : Window
-    {
+        {
         public Osume Osume;
         DateTime timeStamp;
         private Thread playMP3;
