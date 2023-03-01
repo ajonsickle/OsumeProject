@@ -183,7 +183,7 @@ namespace OsumeProject
             }
             return artistList.convertToArray();
         }
-        public async Task getRefreshToken()
+        public async Task refreshToken()
         {
             var getRefreshedToken = new HttpRequestMessage(HttpMethod.Post, "https://accounts.spotify.com/api/token");
             getRefreshedToken.Content = new FormUrlEncodedContent(new Dictionary<string, string>()

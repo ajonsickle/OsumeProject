@@ -408,7 +408,7 @@ namespace OsumeProject
             factory.getSingleton().accessToken = result.refresh_token;
             factory.getSingleton().currentToken = result.access_token;
             factory.getSingleton().username = usernameInput;
-            await getApiClient().getRefreshToken();
+            await getApiClient().refreshToken();
             string userID = await getApiClient().getCurrentUserID();
             string pfpURL = await getApiClient().getCurrentUserPFP();
             factory.getSingleton().pfpURL = pfpURL;

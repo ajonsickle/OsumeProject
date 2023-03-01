@@ -168,7 +168,7 @@ namespace OsumeProject
                 ChangeRecButton.Content = "Expanding Taste";
                 ChangeRecButton.Template = (ControlTemplate)this.Resources["pinkButton"];
             }
-            await Osume.getApiClient().getRefreshToken();
+            await Osume.getApiClient().refreshToken();
             try
             {
                 await loadSong();
