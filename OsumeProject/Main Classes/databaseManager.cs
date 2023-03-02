@@ -58,49 +58,60 @@ namespace OsumeProject
             data.Load(reader);
             return data;
         }
+
+        public void insertRowIntoGenre(string genreName)
+        {
+            SQLiteCommand updateGenre = new SQLiteCommand("INSERT INTO genre (genreName, username, numOfLikedSongs, numOfDislikedSongs) VALUES (?, ?, ?, ?)", this.connection);
+            updateGenre.Parameters.AddWithValue("genreName", genreName);
+            updateGenre.Parameters.AddWithValue("username", factory.getSingleton().username);
+            updateGenre.Parameters.AddWithValue("numOfLikedSongs", 1);
+            updateGenre.Parameters.AddWithValue("numOfDislikedSongs", 1);
+            updateGenre.ExecuteNonQuery();
+        }
+
+        public void incrementGenreLikedSongs(string genreName, bool like, bool undo)
+        {
+            if (undo)
+            {
+                SQLiteCommand decrementGenreValues;
+                if (like)
+                {
+                    decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs - 1 WHERE genreName = @genreName AND username = @user", this.connection);
+                }
+                else
+                {
+                    decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs - 1 WHERE genreName = @genreName AND username = @user", this.connection);
+                }
+                decrementGenreValues.Parameters.AddWithValue("@genreName", genreName);
+                decrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
+                decrementGenreValues.ExecuteNonQuery();
+            }
+            else
+            {
+                SQLiteCommand incrementGenreValues;
+                if (like)
+                {
+                    incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs + 1 WHERE genreName = @genreName AND username = @user", this.connection);
+                }
+                else
+                {
+                    incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs + 1 WHERE genreName = @genreName AND username = @user", this.connection);
+                }
+                incrementGenreValues.Parameters.AddWithValue("@genreName", genreName);
+                incrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
+                incrementGenreValues.ExecuteNonQuery();
+            }
+        }
+
         public void updateGenres(string genre, bool like, bool undo)
         {
             try
             {
-                SQLiteCommand updateGenre = new SQLiteCommand("INSERT INTO genre (genreName, username, numOfLikedSongs, numOfDislikedSongs) VALUES (?, ?, ?, ?)", this.connection);
-                updateGenre.Parameters.AddWithValue("genreName", genre);
-                updateGenre.Parameters.AddWithValue("username", factory.getSingleton().username);
-                updateGenre.Parameters.AddWithValue("numOfLikedSongs", 1);
-                updateGenre.Parameters.AddWithValue("numOfDislikedSongs", 1);
-                updateGenre.ExecuteNonQuery();
+                insertRowIntoGenre(genre);
             }
             catch (Exception err)
             {
-                if (undo)
-                {
-                    SQLiteCommand decrementGenreValues;
-                    if (like)
-                    {
-                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs - 1 WHERE genreName = @genreName AND username = @user", this.connection);
-                    }
-                    else
-                    {
-                        decrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs - 1 WHERE genreName = @genreName AND username = @user", this.connection);
-                    }
-                    decrementGenreValues.Parameters.AddWithValue("@genreName", genre);
-                    decrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
-                    decrementGenreValues.ExecuteNonQuery();
-                }
-                else
-                {
-                    SQLiteCommand incrementGenreValues;
-                    if (like)
-                    {
-                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfLikedSongs = numOfLikedSongs + 1 WHERE genreName = @genreName AND username = @user", this.connection);
-                    }
-                    else
-                    {
-                        incrementGenreValues = new SQLiteCommand("UPDATE genre SET numOfDislikedSongs = numOfDislikedSongs + 1 WHERE genreName = @genreName AND username = @user", this.connection);
-                    }
-                    incrementGenreValues.Parameters.AddWithValue("@genreName", genre);
-                    incrementGenreValues.Parameters.AddWithValue("@user", factory.getSingleton().username);
-                    incrementGenreValues.ExecuteNonQuery();
-                }
+                incrementGenreLikedSongs(genre, like, undo);
             }
         }
 

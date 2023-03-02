@@ -190,6 +190,15 @@ namespace OsumeProject
                 }
             }
         }
+        
+        public void deleteFromLibrary(OsumeTrack track)
+        {
+            SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", databaseManager.getConnection());
+            deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
+            deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
+            deleteFromLibrary.ExecuteNonQuery();
+        }
+
         public async Task undoChanges(OsumeTrack track, bool liked)
         {
             OList<string> addedGenres = new OList<string>();
@@ -220,10 +229,7 @@ namespace OsumeProject
                 // clicked like
                 updateGenres(track, true, true);
                 await updateAudioFeatures(track, true);
-                SQLiteCommand deleteFromLibrary = new SQLiteCommand("DELETE FROM savedSong WHERE songID = @songID AND username = @user", databaseManager.getConnection());
-                deleteFromLibrary.Parameters.AddWithValue("@songID", track.id);
-                deleteFromLibrary.Parameters.AddWithValue("@user", factory.getSingleton().username);
-                deleteFromLibrary.ExecuteNonQuery();
+                deleteFromLibrary(track);
                 getApiClient().removeFromPlaylist(factory.getSingleton().playlistID, new string[] { track.id });
             }
 
@@ -445,15 +451,20 @@ namespace OsumeProject
             insertUserSettingsRow.ExecuteNonQuery();
         }
 
+        public void insertRowIntoSavedSong(OsumeTrack currentSong, SQLiteConnection connection)
+        {
+            SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", connection);
+            command.Parameters.AddWithValue("songID", currentSong.id);
+            command.Parameters.AddWithValue("timeSaved", DateTime.Now);
+            command.Parameters.AddWithValue("username", factory.getSingleton().username);
+            command.ExecuteNonQuery();
+        }
+
         public async Task makeSongChoice(OsumeTrack currentSong, bool like)
         {
             if (like)
             {
-                SQLiteCommand command = new SQLiteCommand("INSERT INTO savedSong (songID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().getConnection());
-                command.Parameters.AddWithValue("songID", currentSong.id);
-                command.Parameters.AddWithValue("timeSaved", DateTime.Now);
-                command.Parameters.AddWithValue("username", factory.getSingleton().username);
-                command.ExecuteNonQuery();
+                insertRowIntoSavedSong(currentSong, getDatabaseManager().getConnection());
                 getApiClient().addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
                 await updateAudioFeatures(currentSong, false);
             }
