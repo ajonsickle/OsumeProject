@@ -33,8 +33,8 @@ namespace OsumeProject
         {
         public Osume Osume;
         DateTime timeStamp;
-        private Thread playMP3;
-        public OsumeTrack currentSong;
+        public Thread playMP3 { get; set; }
+        public OsumeTrack currentSong { get; set; }
        
         public homepage(ref Osume Osume)
         {

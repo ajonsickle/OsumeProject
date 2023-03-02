@@ -23,9 +23,9 @@ namespace OsumeProject
 {
     public class apiClient
     {
-        public string clientID;
-        public string clientSecret;
-        public HttpClient client;
+        public string clientID { get; set; }
+        public string clientSecret { get; set; }
+        public HttpClient client { get; set; }
         public apiClient(string clientID, string clientSecret, HttpClient client)
         {
             this.clientID = clientID;

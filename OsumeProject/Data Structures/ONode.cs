@@ -7,13 +7,11 @@ namespace OsumeProject
     public class ONode<T>
     {
         private T value;
-        public ONode<T> next;
-        // constructor
+        public ONode<T> next { get; set; }
         public ONode(T value)
         {
             this.value = value;
         }
-        // getter and setter for value
         public T getValue()
         {
             return value;
@@ -22,7 +20,5 @@ namespace OsumeProject
         {
             value = data;
         }
-
-
     }
 }

@@ -29,9 +29,9 @@ namespace OsumeProject
     {
         private apiClient apiClient;
         private databaseManager databaseManager;
-        public OStack<OsumeTrack> songsPlayed;
-        public OStack<OsumeTrack> songsToPlay;
-        public OStack<bool> previousSongsLiked;
+        public OStack<OsumeTrack> songsPlayed { get; set; }
+        public OStack<OsumeTrack> songsToPlay { get; set; }
+        public OStack<bool> previousSongsLiked { get; set; }
         public Osume(apiClient apiClient, databaseManager databaseManager)
         {
             this.apiClient = apiClient;
@@ -190,6 +190,38 @@ namespace OsumeProject
                 }
             }
         }
+
+        public void createTables()
+        {
+            SQLiteCommand createUserAccount = new SQLiteCommand("CREATE TABLE userAccount(username TEXT NOT NULL PRIMARY KEY, hashedPassword TEXT NOT NULL, accessToken TEXT NOT NULL, playlistID TEXT NOT NULL, spotifyID TEXT NOT NULL)", getDatabaseManager().getConnection());
+            SQLiteCommand createAudioFeature = new SQLiteCommand("CREATE TABLE audioFeature(username TEXT NOT NULL PRIMARY KEY, count INTEGER, danceabilityTotal REAL, energyTotal REAL, speechinessTotal REAL, acousticnessTotal REAL, instrumentalnessTotal REAL, livenessTotal REAL, valenceTotal REAL, FOREIGN KEY(username) REFERENCES userAccount(username))", getDatabaseManager().getConnection());
+            SQLiteCommand createBlockedArtist = new SQLiteCommand("CREATE TABLE blockedArtist(artistID TEXT NOT NULL PRIMARY KEY, timeSaved DATETIME, username TEXT NOT NULL, FOREIGN KEY (username) REFERENCES userAccount(username))", getDatabaseManager().getConnection());
+            SQLiteCommand createGenre = new SQLiteCommand("CREATE TABLE genre(genreName TEXT NOT NULL, username TEXT NOT NULL, numOfLikedSongs REAL NOT NULL, numOfDislikedSongs REAL NOT NULL, FOREIGN KEY (username) REFERENCES userAccount (username), UNIQUE (genreName, username))", getDatabaseManager().getConnection());
+            SQLiteCommand createSavedSong = new SQLiteCommand("CREATE TABLE savedSong(songID TEXT NOT NULL PRIMARY KEY, timeSaved DATETIME, username TEXT NOT NULL, FOREIGN KEY (username) REFERENCES userAccount(username))", getDatabaseManager().getConnection());
+            SQLiteCommand createUserSettings = new SQLiteCommand("CREATE TABLE userSettings(explicitTracks INTEGER NOT NULL, recommendationStrength INTEGER NOT NULL, username TEXT NOT NULL, FOREIGN KEY (username) REFERENCES userAccount(username))", getDatabaseManager().getConnection());
+            createUserAccount.ExecuteNonQuery();
+            createAudioFeature.ExecuteNonQuery();
+            createBlockedArtist.ExecuteNonQuery();
+            createGenre.ExecuteNonQuery();
+            createSavedSong.ExecuteNonQuery();
+            createUserSettings.ExecuteNonQuery();
+        }
+
+        public void deleteTables()
+        {
+            SQLiteCommand deleteUserAccount = new SQLiteCommand("DROP TABLE userAccount", getDatabaseManager().getConnection());
+            SQLiteCommand deleteAudioFeature = new SQLiteCommand("DROP TABLE audioFeature", getDatabaseManager().getConnection());
+            SQLiteCommand deleteBlockedArtist = new SQLiteCommand("DROP TABLE blockList", getDatabaseManager().getConnection());
+            SQLiteCommand deleteGenre = new SQLiteCommand("DROP TABLE genre", getDatabaseManager().getConnection());
+            SQLiteCommand deleteSavedSong = new SQLiteCommand("DROP TABLE savedSong", getDatabaseManager().getConnection());
+            SQLiteCommand deleteUserSettings = new SQLiteCommand("DROP TABLE userSettings", getDatabaseManager().getConnection());
+            deleteUserAccount.ExecuteNonQuery();
+            deleteAudioFeature.ExecuteNonQuery();
+            deleteBlockedArtist.ExecuteNonQuery();
+            deleteGenre.ExecuteNonQuery();
+            deleteSavedSong.ExecuteNonQuery();
+            deleteUserSettings.ExecuteNonQuery();
+        }
         
         public void deleteFromLibrary(OsumeTrack track)
         {
@@ -201,17 +233,6 @@ namespace OsumeProject
 
         public async Task undoChanges(OsumeTrack track, bool liked)
         {
-            OList<string> addedGenres = new OList<string>();
-            foreach (OsumeArtist artist in track.artists)
-            {
-                foreach (string genre in artist.genres)
-                {
-                    if (!addedGenres.contains(genre))
-                    {
-                        addedGenres.add(genre);
-                    }
-                }
-            }
             DataTable featureData = null;
             if (liked)
             {
@@ -518,7 +539,7 @@ namespace OsumeProject
                 {
                     allowed = true;
                 }
-                SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username AND artistID = @artistID", getDatabaseManager().getConnection());
+                SQLiteCommand searchBlockList = new SQLiteCommand("SELECT * FROM blockedArtist WHERE username = @username AND artistID = @artistID", getDatabaseManager().getConnection());
                 searchBlockList.Parameters.AddWithValue("@username", factory.getSingleton().username);
                 if (song.artists.Length > 0)
                 {
@@ -566,14 +587,14 @@ namespace OsumeProject
         }
         public DataTable getBlockedArtists()
         {
-            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockList WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().getConnection());
+            SQLiteCommand command = new SQLiteCommand("SELECT * FROM blockedArtist WHERE username = @username ORDER BY timeSaved DESC", getDatabaseManager().getConnection());
             command.Parameters.AddWithValue("@username", factory.getSingleton().username);
             DataTable data = getDatabaseManager().returnSearchedTable(command);
             return data;
         }
         public void addToBlockedArtists(OsumeArtist artist)
         {
-            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockList (artistID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().getConnection());
+            SQLiteCommand comm = new SQLiteCommand("INSERT INTO blockedArtist (artistID, timeSaved, username) VALUES (?, ?, ?)", getDatabaseManager().getConnection());
             comm.Parameters.AddWithValue("@artistID", artist.id);
             comm.Parameters.AddWithValue("@timeSaved", DateTime.Now);
             comm.Parameters.AddWithValue("@username", factory.getSingleton().username);
@@ -583,7 +604,7 @@ namespace OsumeProject
         {
             DataTable data = getBlockedArtists();
             DataRow row = data.Rows[Convert.ToInt32(name)];
-            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockList WHERE artistID = @id", getDatabaseManager().getConnection());
+            SQLiteCommand removeArtist = new SQLiteCommand("DELETE FROM blockedArtist WHERE artistID = @id", getDatabaseManager().getConnection());
             removeArtist.Parameters.AddWithValue("@id", row[0]);
             removeArtist.ExecuteNonQuery();
         }
