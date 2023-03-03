@@ -77,7 +77,6 @@ namespace OsumeProject
             if (x.next != null && EqualityComparer<T>.Default.Equals(x.next.getValue(), data))
             {
                 x.next = x.next.next;
-                x = null;
                 length -= 1;
             }
             else
