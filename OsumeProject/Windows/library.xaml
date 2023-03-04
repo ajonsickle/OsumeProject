@@ -43,7 +43,7 @@
                 <SolidColorBrush Color="black"/>
             </Ellipse.Fill>
         </Ellipse>
-        <ScrollViewer Grid.ColumnSpan="3" Width="1500" Height="900" Margin="0, 0, 0, 0" Grid.Row="1" CanContentScroll="True" VerticalScrollBarVisibility="Hidden">
+        <ScrollViewer Grid.ColumnSpan="3" Width="1500" Height="900" Margin="0, 0, 0, 0" Grid.Row="1" CanContentScroll="True" VerticalScrollBarVisibility="Hidden" Name="scrollView">
             <Canvas Name="songsList" Width="Auto" Height="1000">
                 
             </Canvas>

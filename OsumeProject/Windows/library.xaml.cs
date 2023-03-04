@@ -43,6 +43,7 @@ namespace OsumeProject
 
         private async void loadLibrary()
         {
+            scrollView.ScrollToTop();
             ImageBrush brush = new ImageBrush();
             brush.ImageSource = new BitmapImage(new Uri(factory.getSingleton().pfpURL));
             profilePicture.Fill = brush;
