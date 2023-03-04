@@ -186,7 +186,7 @@ namespace OsumeProject
             Dictionary<string, double> recommendations = null;
             bool validSong = false;
             Random rand = new Random();
-            int index = 14;
+            int index = 9;
             if (songToPlay == null)
             {
                 recommendations = Osume.generateRecommendations();

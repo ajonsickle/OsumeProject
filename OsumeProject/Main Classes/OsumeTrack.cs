@@ -7,7 +7,7 @@ namespace OsumeProject
     public class OsumeTrack : IComparable
     {
         public OsumeArtist[] artists { get; set; }
-        public string spotifyURL { get; set; }
+        public string spotifyURL { get; set; }  
         public string id { get; set; }
         public string previewURL { get; set; }
         public string name { get; set; }
