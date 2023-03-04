@@ -112,12 +112,12 @@ namespace OsumeProject
                 {
                     T[] temp1 = new T[i];
                     Array.Copy(elements, temp1, i);
-                    Array.Reverse(elements);
                     T[] temp2 = new T[length - i - 1];
                     Array.Copy(elements, temp2, length - i - 1);
-                    Array.Reverse(temp2);
-                    final = (T[])temp1.Concat(temp2);
+                    temp1.CopyTo(final, 0);
+                    temp2.CopyTo(final, temp1.Length);
                     elements = final;
+                    return;
                 }
             }
         }
