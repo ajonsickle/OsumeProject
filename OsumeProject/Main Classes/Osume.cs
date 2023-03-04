@@ -488,10 +488,11 @@ namespace OsumeProject
                 insertRowIntoSavedSong(currentSong, getDatabaseManager().getConnection());
                 getApiClient().addToPlaylist(factory.getSingleton().playlistID, currentSong.id);
                 await updateAudioFeatures(currentSong, false);
-            }
+            } 
             updateGenres(currentSong, like, false);
             songsPlayed.push(currentSong);
-            previousSongsLiked.push(true);
+            previousSongsLiked.push(like);
+
         }
         public int getRecommendationStrength()
         {
