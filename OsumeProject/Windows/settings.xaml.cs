@@ -143,8 +143,9 @@ namespace OsumeProject
         }
         private void removeButtonClick(object sender, RoutedEventArgs e)
         {
-            string name = ((Button)sender).Name[12].ToString();
-            Osume.removeFromBlockedArtists(name);
+            string name = ((Button)sender).Name.ToString();
+            string substring = name.Substring(12, name.Length - 12);
+            Osume.removeFromBlockedArtists(substring);
             loadSettings();
         }
         private void ellipse_MouseUp(object sender, MouseButtonEventArgs e)

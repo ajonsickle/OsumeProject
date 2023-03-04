@@ -49,8 +49,9 @@ namespace OsumeProject
 
         private void removeButtonClick(object sender, RoutedEventArgs e)
         {
-            string name = ((Button)sender).Name[12].ToString();
-            Osume.removeUserAccount(name);
+            string name = ((Button)sender).Name.ToString();
+            string substring = name.Substring(12, name.Length - 12);
+            Osume.removeUserAccount(substring);
             loadUserList();
         }
 
